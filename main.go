@@ -5,13 +5,15 @@ import (
 	fb "github.com/huandu/facebook"
 )
 
-// TODO: modularize, ie ask for what kind of acess and for which user
+// GetAccessToken returns the access token needed to make authenticated requests
+//
+// Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "CAACEdEose0cBANZBMXBYPhpegCUyx3B54uCJNFnOCyhnOAhqNteXwEwCTWZAYMW6HZCGLg4sHp83gVap1uiKKbz6Wjvh8iJf57LoZC1Tol3ZBZA3CKAWgERwxwANF4ghpObWnSFZAj8SszlRtUOJ6hfj4FZAIpYP7if4tBqWz7o2ByZCXquHGqIgWrP2BU1WcxpDB9iAtALp6Deizgb704i96"
+	var accessToken = "EAACEdEose0cBAIBSK5qPhnzdTZCfgAK5pM4MbseqiBIPOR5ZBT1hhrECg4vP06E1JK2aPs3schlDtVStzpLzoJmAvqiUtiDfdBobnR1ivx16tAifdOaziy1HNfqUJ9FBzfwGl8J2zU2o2ZC6QZCJiLKuTBr5jI335HvQojx6ugZDZD"
 	return accessToken
 }
 
-// GetUserID will return the user's id associated with the access token provided for the app.
+// GetUserID returns the user's id associated with the access token provided for the app.
 //
 // May modify this in the future to just return the user map.
 func GetUserID() string {
@@ -30,7 +32,7 @@ func GetUserID() string {
 	return res["id"].(string)
 }
 
-// TODO: modularize, ie ask for which group
+// GetGroupID returns the Herp Derp group_id
 func GetGroupID() string {
 	var groupID = "208678979226870"
 	return groupID
@@ -41,21 +43,39 @@ func main() {
 	var _ = GetUserID()
 	var herpDerpGroupID = GetGroupID()
 
-	// Start parsing through the feed!
-	// Params: can specify which fields you want back
-	res, err := fb.Get(fmt.Sprintf("/%s/feed", herpDerpGroupID), fb.Params{
+	// Get list of all members
+	res, err := fb.Get(fmt.Sprintf("/%s/members", herpDerpGroupID), fb.Params{
 		// "fields":       "feed",
 		"access_token": myAccessToken,
 	})
 	if err != nil {
-		fmt.Println("Error when getting group feed: ", err)
+		fmt.Println("Error when getting group members: ", err)
 	}
 
-	// grab 'data' for a map of posts
-	fmt.Println("Feed length:", len(res))
-	for k, _ := range res {
-		fmt.Println(k)
-	}
+	// START
+	// figure out app and session
+	// https://github.com/huandu/facebook#use-app-and-session
+
+	// Create the paging object
+	paging, _ := res.Paging(session)
+
+	// Get current results
+	results := paging.Data()
+	fmt.Println("first list of members:", results)
+
+	// get next page.
+	noMore, err := paging.Next()
+	fmt.Println("more results?:", noMore)
+
+	results = paging.Data()
+	fmt.Println("second list of members:", results)
+
+
+	// // Get number of group members
+	// fmt.Println("Herp Derp members length:", len(res["data"].([]interface{})))
+	// for k, _ := range res {
+	// 	fmt.Println(k)
+	// }
 
 	// Extract post data for users
 	// example API call on post gotten from feed
