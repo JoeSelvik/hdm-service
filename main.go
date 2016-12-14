@@ -9,7 +9,7 @@ import (
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAI1GgRYWkn6SJM4sz3AivSyIGx5IcuLNW8JLNfKZCtdOMVqEV7YvjLYsy6QIqEGhzg2ZBVramZCsf1zCiiTvKTcUzhZCZAeEi3zQsZB2qZB2KOfT91JuXlW4ZAp6OKdmh4ylu9pKsyqBQkpvD998pEEDcAxokmlCDAZDZD"
+	var accessToken = "EAACEdEose0cBAFjQAJlth5E6ZCfW7X9yIoXZCvGtv3jS72f2M3J2hpIDNAExFkyNHhpunHy6pnWmFFlk6TvXrsUrG9ZAoNN5aLCTv167h49YA1MZA8yZBx8jtqZAcY2amqITtjYHi8cJQJrEB2ZBl1jBdHtOJR1MYz55ckxUZBOzDQZDZD"
 	return accessToken
 }
 
@@ -38,15 +38,17 @@ func GetGroupID() string {
 	return groupID
 }
 
-type User struct {
-	Admin bool
-	Name  string
-	Id    int
+type Contender struct {
+	Name               string
+	Id                 string `facebook:",required"`
+	TotalPosts         int
+	TotalLikesReceived int
+	AvgLikePerPost     int
+	TotalLikesGiven    int
 }
 
 func main() {
 	var myAccessToken = GetAccessToken()
-	var _ = GetUserID()
 	var herpDerpGroupID = GetGroupID()
 
 	// "your-app-id", "your-app-secret"
@@ -67,20 +69,25 @@ func main() {
 		fmt.Println("Error when getting group members:", err)
 	}
 
-	// Create the paging object
+	// Create the paging object for /members response
 	paging, err := response.Paging(session)
 	if err != nil {
 		fmt.Println("Error when generating the responses Paging object:", err)
 	}
 
-	// map[administrator:false name:Jacob Glowacki id:1822807864675176]
+	var Contenders []Contender
+
 	for {
 		results := paging.Data()
-		fmt.Println("Next list of members:", results)
 
-		var firstUser User
-		results[0].Decode(&firstUser)
-		fmt.Println("first user:", firstUser)
+		// map[administrator:false name:Jacob Glowacki id:1822807864675176]
+		var c Contender
+
+		for i := 0; i < len(results); i++ {
+			results[i].Decode(&c)
+			Contenders = append(Contenders, c)
+			fmt.Println("Contender added", c)
+		}
 
 		noMore, err := paging.Next()
 		if err != nil {
@@ -90,6 +97,8 @@ func main() {
 			break
 		}
 	}
+
+	fmt.Println("number of members:", len(Contenders))
 
 	// // Get number of group members
 	// fmt.Println("Herp Derp members length:", len(response["data"].([]interface{})))
