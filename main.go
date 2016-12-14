@@ -9,7 +9,7 @@ import (
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAIBSK5qPhnzdTZCfgAK5pM4MbseqiBIPOR5ZBT1hhrECg4vP06E1JK2aPs3schlDtVStzpLzoJmAvqiUtiDfdBobnR1ivx16tAifdOaziy1HNfqUJ9FBzfwGl8J2zU2o2ZC6QZCJiLKuTBr5jI335HvQojx6ugZDZD"
+	var accessToken = "EAACEdEose0cBAI1GgRYWkn6SJM4sz3AivSyIGx5IcuLNW8JLNfKZCtdOMVqEV7YvjLYsy6QIqEGhzg2ZBVramZCsf1zCiiTvKTcUzhZCZAeEi3zQsZB2qZB2KOfT91JuXlW4ZAp6OKdmh4ylu9pKsyqBQkpvD998pEEDcAxokmlCDAZDZD"
 	return accessToken
 }
 
@@ -38,42 +38,62 @@ func GetGroupID() string {
 	return groupID
 }
 
+type User struct {
+	Admin bool
+	Name  string
+	Id    int
+}
+
 func main() {
 	var myAccessToken = GetAccessToken()
 	var _ = GetUserID()
 	var herpDerpGroupID = GetGroupID()
 
+	// "your-app-id", "your-app-secret"
+	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
+	session := globalApp.Session(myAccessToken)
+	err := session.Validate()
+	if err != nil {
+		fmt.Println("Error validating session:", err)
+	}
+
 	// Get list of all members
-	res, err := fb.Get(fmt.Sprintf("/%s/members", herpDerpGroupID), fb.Params{
+	// response is a map[string]interface{}
+	response, err := fb.Get(fmt.Sprintf("/%s/members", herpDerpGroupID), fb.Params{
 		// "fields":       "feed",
 		"access_token": myAccessToken,
 	})
 	if err != nil {
-		fmt.Println("Error when getting group members: ", err)
+		fmt.Println("Error when getting group members:", err)
 	}
 
-	// START
-	// figure out app and session
-	// https://github.com/huandu/facebook#use-app-and-session
-
 	// Create the paging object
-	paging, _ := res.Paging(session)
+	paging, err := response.Paging(session)
+	if err != nil {
+		fmt.Println("Error when generating the responses Paging object:", err)
+	}
 
-	// Get current results
-	results := paging.Data()
-	fmt.Println("first list of members:", results)
+	// map[administrator:false name:Jacob Glowacki id:1822807864675176]
+	for {
+		results := paging.Data()
+		fmt.Println("Next list of members:", results)
 
-	// get next page.
-	noMore, err := paging.Next()
-	fmt.Println("more results?:", noMore)
+		var firstUser User
+		results[0].Decode(&firstUser)
+		fmt.Println("first user:", firstUser)
 
-	results = paging.Data()
-	fmt.Println("second list of members:", results)
-
+		noMore, err := paging.Next()
+		if err != nil {
+			fmt.Println("Error when accessing responses Next in loop:", err)
+		}
+		if noMore {
+			break
+		}
+	}
 
 	// // Get number of group members
-	// fmt.Println("Herp Derp members length:", len(res["data"].([]interface{})))
-	// for k, _ := range res {
+	// fmt.Println("Herp Derp members length:", len(response["data"].([]interface{})))
+	// for k, _ := range response {
 	// 	fmt.Println(k)
 	// }
 
