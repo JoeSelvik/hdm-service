@@ -9,7 +9,7 @@ import (
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAFjQAJlth5E6ZCfW7X9yIoXZCvGtv3jS72f2M3J2hpIDNAExFkyNHhpunHy6pnWmFFlk6TvXrsUrG9ZAoNN5aLCTv167h49YA1MZA8yZBx8jtqZAcY2amqITtjYHi8cJQJrEB2ZBl1jBdHtOJR1MYz55ckxUZBOzDQZDZD"
+	var accessToken = "EAACEdEose0cBAMcn6ZCpQTQZBJ80Q1fhZBKC5ivKLSJ1ZAvnLUiax5SYt1DZBG8E7ZC8cjtHb5adrj1Y8apxtSHXWbZAZAkZCzZBNl8tZBNyYVjCnW8oZCEPLOMBunu4MJGL4agh7mop57rrDo55JAX1KMioE8S34pVuDcFVZAMKpwEry9AZDZD"
 	return accessToken
 }
 
@@ -51,7 +51,7 @@ func main() {
 	var myAccessToken = GetAccessToken()
 	var herpDerpGroupID = GetGroupID()
 
-	// "your-app-id", "your-app-secret"
+	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
 	session := globalApp.Session(myAccessToken)
 	err := session.Validate()
@@ -75,7 +75,7 @@ func main() {
 		fmt.Println("Error when generating the responses Paging object:", err)
 	}
 
-	var Contenders []Contender
+	var contenders []Contender
 
 	for {
 		results := paging.Data()
@@ -85,7 +85,7 @@ func main() {
 
 		for i := 0; i < len(results); i++ {
 			results[i].Decode(&c)
-			Contenders = append(Contenders, c)
+			contenders = append(contenders, c)
 			fmt.Println("Contender added", c)
 		}
 
@@ -98,13 +98,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("number of members:", len(Contenders))
-
-	// // Get number of group members
-	// fmt.Println("Herp Derp members length:", len(response["data"].([]interface{})))
-	// for k, _ := range response {
-	// 	fmt.Println(k)
-	// }
+	fmt.Println("number of members:", len(contenders))
 
 	// Extract post data for users
 	// example API call on post gotten from feed
