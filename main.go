@@ -10,7 +10,7 @@ import (
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAGySW5F9i2Ja2NMQHEZB8qxCL4JOVHlAhxyTSISZBhJPZCGZApvm4p5zncdWMyMtzAeayG6bIlZCqgrJpPErmNXWPsKAShOW1LFVdEZCMpbM7kaUvRAFZB40PDSQUeJjEGxZBWEvAIEtustHmgPPd1VRgZBS31RuUxwZDZD"
+	var accessToken = "EAACEdEose0cBALOLbAnEJmhDiey2PSuZAHdkYQT9QmShB6FvsTCiAxKlUsIazSgSUBdRg84qAgRxz3mHf0u53UJrtGkqsAY5v2lDJj3v3wgOZAFeVvZCZBDSKNgJd0ozMRa1wF5VJhlugRGrAsNAFlcS97Ik11VoFWjQI3pZCHgZDZD"
 	return accessToken
 }
 
@@ -94,6 +94,7 @@ func CreateContenders(session *fb.Session) []Contender {
 }
 
 func populateTotalPosts(contenders []Contender, session *fb.Session) {
+	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
 		"feilds":       "from",
@@ -103,6 +104,7 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		os.Exit(3)
 	}
 
+	// Get the feed's paging object
 	paging, err := response.Paging(session)
 	if err != nil {
 		fmt.Println("Error when generating the feed responses Paging object:", err)
@@ -112,17 +114,20 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 	var posts []interface{}
 	count := 0
 
+	// 25 posts per page
 	for {
 		results := paging.Data()
 
 		for i := 0; i < len(results); i++ {
 			posts = append(posts, results[i])
+
+			// start - create posts struct? TotalPosts and TotalLikesReceived
 		}
 		count++
 		fmt.Println("finished lap:", count)
 
-		if count > 10 {
-			fmt.Println("found first 200 posts")
+		if count >= 10 {
+			fmt.Println("found first 250 posts")
 			break
 		}
 
@@ -132,6 +137,7 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 			os.Exit(3)
 		}
 		if noMore {
+			fmt.Println("Reached the end of the feed!")
 			break
 		}
 	}
