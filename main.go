@@ -4,13 +4,14 @@ import (
 	"fmt"
 	fb "github.com/huandu/facebook"
 	"os"
+	"reflect"
 )
 
 // GetAccessToken returns the access token needed to make authenticated requests
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBALOLbAnEJmhDiey2PSuZAHdkYQT9QmShB6FvsTCiAxKlUsIazSgSUBdRg84qAgRxz3mHf0u53UJrtGkqsAY5v2lDJj3v3wgOZAFeVvZCZBDSKNgJd0ozMRa1wF5VJhlugRGrAsNAFlcS97Ik11VoFWjQI3pZCHgZDZD"
+	var accessToken = "EAACEdEose0cBABsIoO1TdOZCxSLi8kYg07O7qKlRBnwaTqvHGIxYZASxeTZBffsBJZAKSOT3ByHOpyDHaZA9dchR3QCgxUPC6BtBB7LRewzhRFwLJ8VZAk1qnPF7ejUUzGDehtyUOXGcLf3tIViJY8JAcagI3lqGHsYQ4QFVy0PwZDZD"
 	return accessToken
 }
 
@@ -41,12 +42,21 @@ func GetGroupID() string {
 }
 
 type Contender struct {
-	Name               string
 	Id                 string `facebook:",required"`
+	Name               string
 	TotalPosts         int
 	TotalLikesReceived int
 	AvgLikePerPost     int
 	TotalLikesGiven    int
+}
+
+type Post struct {
+	Id          string `facebook:",required"`
+	Title       string
+	CreatedDate string
+	From        string `facebook:",required"`
+	TotalLikes  int
+	TotalShares int
 }
 
 // Returns a slice of Contenders for a given *Session
@@ -111,23 +121,37 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		os.Exit(3)
 	}
 
-	var posts []interface{}
+	var posts []Post
 	count := 0
 
 	// 25 posts per page
 	for {
 		results := paging.Data()
 
+		// start - convert {}interface to map
+
+		// load data from each facebookPost into a Post struct
 		for i := 0; i < len(results); i++ {
-			posts = append(posts, results[i])
+			var p Post
+			facebookPost := fb.Result(results[i])
+			// p.TotalLikes = facebookPost.Get("likes.data")
+			fmt.Println("Likes data:", facebookPost.Get("likes.data"))
+
+			fmt.Println("type:", reflect.TypeOf(facebookPost.Get("likes.data")))
+
+			fmt.Println("length:", len(facebookPost.Get("likes.data")))
+
+			results[i].Decode(&p)
+			posts = append(posts, p)
+			fmt.Println("Decoded post:", p)
 
 			// start - create posts struct? TotalPosts and TotalLikesReceived
 		}
 		count++
 		fmt.Println("finished lap:", count)
 
-		if count >= 10 {
-			fmt.Println("found first 250 posts")
+		if count >= 1 {
+			fmt.Println("found first 25 posts")
 			break
 		}
 
