@@ -4,14 +4,13 @@ import (
 	"fmt"
 	fb "github.com/huandu/facebook"
 	"os"
-	"reflect"
 )
 
 // GetAccessToken returns the access token needed to make authenticated requests
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBABsIoO1TdOZCxSLi8kYg07O7qKlRBnwaTqvHGIxYZASxeTZBffsBJZAKSOT3ByHOpyDHaZA9dchR3QCgxUPC6BtBB7LRewzhRFwLJ8VZAk1qnPF7ejUUzGDehtyUOXGcLf3tIViJY8JAcagI3lqGHsYQ4QFVy0PwZDZD"
+	var accessToken = "EAACEdEose0cBACnb5IUNMBgzEUS9hYjzQZC7laNIeMelYZA6JSUZCVviBJdng8RI7WWycO9XL3ZAnu4hKzaEsVspJsZCCZCu34ra1atusWoeGucuNA74Ms9ZCvZAk4ol89zlev6aEtbneauw7yhL62MuQpDgMvZCShjpZCMMyI8sAgVQZDZD"
 	return accessToken
 }
 
@@ -54,7 +53,7 @@ type Post struct {
 	Id          string `facebook:",required"`
 	Title       string
 	CreatedDate string
-	From        string `facebook:",required"`
+	From        string
 	TotalLikes  int
 	TotalShares int
 }
@@ -107,7 +106,7 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
-		"feilds":       "from",
+		"feilds":       []string{"from", "created_time"},
 	})
 	if err != nil {
 		fmt.Println("Error when getting feed:", err)
@@ -128,25 +127,30 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 	for {
 		results := paging.Data()
 
-		// start - convert {}interface to map
-
 		// load data from each facebookPost into a Post struct
 		for i := 0; i < len(results); i++ {
 			var p Post
 			facebookPost := fb.Result(results[i])
-			// p.TotalLikes = facebookPost.Get("likes.data")
-			fmt.Println("Likes data:", facebookPost.Get("likes.data"))
 
-			fmt.Println("type:", reflect.TypeOf(facebookPost.Get("likes.data")))
+			from := facebookPost.Get("from.name")
+			p.From = from.(string)
 
-			fmt.Println("length:", len(facebookPost.Get("likes.data")))
+			createdDate := facebookPost.Get("created_time")
+			p.CreatedDate = createdDate.(string)
+
+			likesData := facebookPost.Get("likes.data")
+			if likesData != nil {
+				numLikes := facebookPost.Get("likes.data").([]interface{})
+				p.TotalLikes = len(numLikes)
+			} else {
+				p.TotalLikes = 0
+			}
 
 			results[i].Decode(&p)
 			posts = append(posts, p)
 			fmt.Println("Decoded post:", p)
-
-			// start - create posts struct? TotalPosts and TotalLikesReceived
 		}
+
 		count++
 		fmt.Println("finished lap:", count)
 
