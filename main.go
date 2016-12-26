@@ -6,11 +6,21 @@ import (
 	"os"
 )
 
+func handle_error(msg string, err error, exit bool) {
+	if err {
+		fmt.Println(msg, ":", err)
+
+		if exit {
+			os.Exit(3)
+		}
+	}
+}
+
 // GetAccessToken returns the access token needed to make authenticated requests
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBACnb5IUNMBgzEUS9hYjzQZC7laNIeMelYZA6JSUZCVviBJdng8RI7WWycO9XL3ZAnu4hKzaEsVspJsZCCZCu34ra1atusWoeGucuNA74Ms9ZCvZAk4ol89zlev6aEtbneauw7yhL62MuQpDgMvZCShjpZCMMyI8sAgVQZDZD"
+	var accessToken = "EAACEdEose0cBAFdiVMq5sDwOy6qE4hum2ZABj8eVyrdFpYKF0KdPIUpZBaeKLaGCtODcLCZAAfHPrH04x7FBwZBPVEJdhtz9TBtuTZAuVnOaSJl4fQMOPiyaOrknmkvMIrcXsj21ZCoOXYdqeOZBGukz7ZCUbf7o40pBtZCZCbWavw8gZDZD"
 	return accessToken
 }
 
@@ -23,10 +33,7 @@ func GetUserID() string {
 	res, err := fb.Get("/me", fb.Params{
 		"access_token": myAccessToken,
 	})
-	if err != nil {
-		fmt.Println("Error when accessing /me: ", err)
-		os.Exit(3)
-	}
+	handle_error("Error when accessing /me", err, true)
 
 	fmt.Println("User associated with access token: ", res)
 
@@ -51,11 +58,9 @@ type Contender struct {
 
 type Post struct {
 	Id          string `facebook:",required"`
-	Title       string
 	CreatedDate string
 	From        string
 	TotalLikes  int
-	TotalShares int
 }
 
 // Returns a slice of Contenders for a given *Session
@@ -64,17 +69,11 @@ func CreateContenders(session *fb.Session) []Contender {
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
 	})
-	if err != nil {
-		fmt.Println("Error when getting group members:", err)
-		os.Exit(3)
-	}
+	handle_error("Error when getting group members", err, true)
 
 	// Create the paging object for /members response
 	paging, err := response.Paging(session)
-	if err != nil {
-		fmt.Println("Error when generating the members responses Paging object:", err)
-		os.Exit(3)
-	}
+	handle_error("Error when generating the members responses Paging object", err, true)
 
 	var contenders []Contender
 
@@ -90,10 +89,7 @@ func CreateContenders(session *fb.Session) []Contender {
 		}
 
 		noMore, err := paging.Next()
-		if err != nil {
-			fmt.Println("Error when accessing responses Next in loop:", err)
-			os.Exit(3)
-		}
+		handle_error("Error when accessing responses Next in loop:", err, true)
 		if noMore {
 			break
 		}
@@ -108,17 +104,11 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		"access_token": GetAccessToken(),
 		"feilds":       []string{"from", "created_time"},
 	})
-	if err != nil {
-		fmt.Println("Error when getting feed:", err)
-		os.Exit(3)
-	}
+	handle_error("Error when getting feed", err, true)
 
 	// Get the feed's paging object
 	paging, err := response.Paging(session)
-	if err != nil {
-		fmt.Println("Error when generating the feed responses Paging object:", err)
-		os.Exit(3)
-	}
+	handle_error("Error when generating the feed responses Paging object", err, true)
 
 	var posts []Post
 	count := 0
@@ -131,6 +121,9 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		for i := 0; i < len(results); i++ {
 			var p Post
 			facebookPost := fb.Result(results[i])
+
+			id := facebookPost.Get("id")
+			p.Id = id.(string)
 
 			from := facebookPost.Get("from.name")
 			p.From = from.(string)
@@ -146,7 +139,6 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 				p.TotalLikes = 0
 			}
 
-			results[i].Decode(&p)
 			posts = append(posts, p)
 			fmt.Println("Decoded post:", p)
 		}
@@ -160,10 +152,7 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		}
 
 		noMore, err := paging.Next()
-		if err != nil {
-			fmt.Println("Error when accessing responses Next in loop:", err)
-			os.Exit(3)
-		}
+		handle_error("Error when accessing responses Next in loop", err, true)
 		if noMore {
 			fmt.Println("Reached the end of the feed!")
 			break
@@ -181,10 +170,7 @@ func main() {
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
 	session := globalApp.Session(myAccessToken)
 	err := session.Validate()
-	if err != nil {
-		fmt.Println("Error validating session:", err)
-		os.Exit(3)
-	}
+	handle_error("Error validating session", err, true)
 
 	contenders := CreateContenders(session)
 	fmt.Println("number of members:", len(contenders))
