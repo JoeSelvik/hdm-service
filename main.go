@@ -1,13 +1,19 @@
+/*
+Dependancies
+* github.com/mattn/go-sqlite3
+
+*/
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	fb "github.com/huandu/facebook"
 	"os"
 )
 
 func handle_error(msg string, err error, exit bool) {
-	if err {
+	if err != nil {
 		fmt.Println(msg, ":", err)
 
 		if exit {
@@ -20,7 +26,7 @@ func handle_error(msg string, err error, exit bool) {
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAFdiVMq5sDwOy6qE4hum2ZABj8eVyrdFpYKF0KdPIUpZBaeKLaGCtODcLCZAAfHPrH04x7FBwZBPVEJdhtz9TBtuTZAuVnOaSJl4fQMOPiyaOrknmkvMIrcXsj21ZCoOXYdqeOZBGukz7ZCUbf7o40pBtZCZCbWavw8gZDZD"
+	var accessToken = "EAACEdEose0cBAMpw6lflR0fg6ZBS1ktopCwKjPkMsqGRUec4qrmYt6IxFUiXCt2EafFPwZABMfOKqgG915ja6ILMi4X2hnhIyRIYZAykAgUI2Lurwble94HyFmJDjGc1bxAOd88q1gs6bUZCGhUoZCu1kmWGcRhvlwRk5wYAsgQZDZD"
 	return accessToken
 }
 
@@ -64,7 +70,7 @@ type Post struct {
 }
 
 // Returns a slice of Contenders for a given *Session
-func CreateContenders(session *fb.Session) []Contender {
+func populateContenders(session *fb.Session) []Contender {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
@@ -163,16 +169,32 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 }
 
 func main() {
+	// sqlite
+	// db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%d sslmode=%s",
+	// 	Config.DBName, Config.DBUser, Config.DBPassword, Config.DBHost, Config.DBPort, Config.DBSSLMode))
+	db, err := sql.Open("sqlite", "db=herp")
+	if err != nil {
+		panic("Problem opening sqlite db")
+	}
+
+	// sql.open may just validate its arguments without creating a connection to the database. To verify that
+	// the data source name is valid, call Ping.
+	err = db.Ping()
+	if err != nil {
+		panic("Not properly connected to a database.")
+	}
+
+	// Facebook
 	var myAccessToken = GetAccessToken()
 	// var herpDerpGroupID = GetGroupID()
 
 	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
 	session := globalApp.Session(myAccessToken)
-	err := session.Validate()
+	err = session.Validate()
 	handle_error("Error validating session", err, true)
 
-	contenders := CreateContenders(session)
+	contenders := populateContenders(session)
 	fmt.Println("number of members:", len(contenders))
 
 	populateTotalPosts(contenders, session)
