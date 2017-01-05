@@ -9,7 +9,13 @@ import (
 	"database/sql"
 	"fmt"
 	fb "github.com/huandu/facebook"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
+)
+
+const (
+	AccessToken     = "EAACEdEose0cBANBwJLlv6ZARjvYLmPuJg80Hb0Pl1QZBGFnMDZAfjrtfSj1GdgolZBhGlzdlyorT9O0czPDeZACMfQoC1e5agkg2D8UQ84BJt0ZBaY379ZBfm9jaMbZAxU4R3Rr6zblLfMFcEy8d2sUn3Nt5kG6XrlG95eWdBnzlZBwZDZD"
+	HerpDerpGroupID = "208678979226870"
 )
 
 func handle_error(msg string, err error, exit bool) {
@@ -26,7 +32,7 @@ func handle_error(msg string, err error, exit bool) {
 //
 // Generated at https://developers.facebook.com/tools/explorer/
 func GetAccessToken() string {
-	var accessToken = "EAACEdEose0cBAMpw6lflR0fg6ZBS1ktopCwKjPkMsqGRUec4qrmYt6IxFUiXCt2EafFPwZABMfOKqgG915ja6ILMi4X2hnhIyRIYZAykAgUI2Lurwble94HyFmJDjGc1bxAOd88q1gs6bUZCGhUoZCu1kmWGcRhvlwRk5wYAsgQZDZD"
+	var accessToken = AccessToken
 	return accessToken
 }
 
@@ -49,7 +55,7 @@ func GetUserID() string {
 
 // GetGroupID returns the Herp Derp group_id
 func GetGroupID() string {
-	var groupID = "208678979226870"
+	var groupID = HerpDerpGroupID
 	return groupID
 }
 
@@ -67,6 +73,42 @@ type Post struct {
 	CreatedDate string
 	From        string
 	TotalLikes  int
+}
+
+// CreateContenderTable creates the contenders table if it does not exist
+func CreateContenderTable(db *sql.DB) {
+	sql_table := `
+	CREATE TABLE IF NOT EXISTS contenders(
+		Id TEXT NOT NULL,
+		Name TEXT,
+		TotalPosts INT,
+		TotalLikesReceived INT,
+		AvgLikesPerPost INT,
+		TotalLikesGiven INT
+	);
+	`
+
+	_, err := db.Exec(sql_table)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// CreatePostsTable creates the posts table if it does not exist
+func CreatePostsTable(db *sql.DB) {
+	sql_table := `
+	CREATE TABLE IF NOT EXISTS contenders(
+		Id TEXT NOT NULL,
+		CreatedDate DATETIME,
+		From TEXT,
+		TotalLikes INT
+	);
+	`
+
+	_, err := db.Exec(sql_table)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Returns a slice of Contenders for a given *Session
@@ -169,22 +211,26 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 }
 
 func main() {
-	// sqlite
-	// db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%d sslmode=%s",
-	// 	Config.DBName, Config.DBUser, Config.DBPassword, Config.DBHost, Config.DBPort, Config.DBSSLMode))
-	db, err := sql.Open("sqlite", "db=herp")
+	// sqlite setup and verification
+	db, err := sql.Open("sqlite3", "herp.db")
 	if err != nil {
-		panic("Problem opening sqlite db")
+		panic(fmt.Sprintf("Error when opening sqlite3: %s", err))
 	}
 
-	// sql.open may just validate its arguments without creating a connection to the database. To verify that
-	// the data source name is valid, call Ping.
+	if db == nil {
+		panic("db nil")
+	}
+
+	// sql.open may just validate its arguments without creating a connection to the database.
+	// To verify that the data source name is valid, call Ping.
 	err = db.Ping()
 	if err != nil {
-		panic("Not properly connected to a database.")
+		panic(fmt.Sprintf("Error when pinging db: %s", err))
 	}
 
-	// Facebook
+	CreateContenderTable(db)
+
+	// Facebook setup
 	var myAccessToken = GetAccessToken()
 	// var herpDerpGroupID = GetGroupID()
 
