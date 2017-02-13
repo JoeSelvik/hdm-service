@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBANBwJLlv6ZARjvYLmPuJg80Hb0Pl1QZBGFnMDZAfjrtfSj1GdgolZBhGlzdlyorT9O0czPDeZACMfQoC1e5agkg2D8UQ84BJt0ZBaY379ZBfm9jaMbZAxU4R3Rr6zblLfMFcEy8d2sUn3Nt5kG6XrlG95eWdBnzlZBwZDZD"
+	AccessToken     = "EAACEdEose0cBANqzdLcEZCq6BqEflMTQZCxRf7ApdpR6vnzDNXATU0SQFR22LjIQZA9YbWjvZAy9ZBHHQGMb6QZC1TevqupHB5RJARL5Qqvfbb86YbBkAoJsCYPUb1WMTVfYZCCZCfrwK6FXSaHTGPll3ue81JwxZAcbx4Eb4Ky27qssKXwxCIH8ZC"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -71,7 +71,7 @@ type Contender struct {
 type Post struct {
 	Id          string `facebook:",required"`
 	CreatedDate string
-	From        string
+	Author      string
 	TotalLikes  int
 }
 
@@ -97,10 +97,10 @@ func CreateContenderTable(db *sql.DB) {
 // CreatePostsTable creates the posts table if it does not exist
 func CreatePostsTable(db *sql.DB) {
 	sql_table := `
-	CREATE TABLE IF NOT EXISTS contenders(
+	CREATE TABLE IF NOT EXISTS posts(
 		Id TEXT NOT NULL,
 		CreatedDate DATETIME,
-		From TEXT,
+		Author TEXT,
 		TotalLikes INT
 	);
 	`
@@ -173,8 +173,8 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 			id := facebookPost.Get("id")
 			p.Id = id.(string)
 
-			from := facebookPost.Get("from.name")
-			p.From = from.(string)
+			author := facebookPost.Get("from.name")
+			p.Author = author.(string)
 
 			createdDate := facebookPost.Get("created_time")
 			p.CreatedDate = createdDate.(string)
@@ -229,10 +229,10 @@ func main() {
 	}
 
 	CreateContenderTable(db)
+	CreatePostsTable(db)
 
 	// Facebook setup
 	var myAccessToken = GetAccessToken()
-	// var herpDerpGroupID = GetGroupID()
 
 	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
