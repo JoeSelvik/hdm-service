@@ -7,14 +7,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	fb "github.com/huandu/facebook"
 	_ "github.com/mattn/go-sqlite3"
+	"net/http"
 	"os"
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBANqzdLcEZCq6BqEflMTQZCxRf7ApdpR6vnzDNXATU0SQFR22LjIQZA9YbWjvZAy9ZBHHQGMb6QZC1TevqupHB5RJARL5Qqvfbb86YbBkAoJsCYPUb1WMTVfYZCCZCfrwK6FXSaHTGPll3ue81JwxZAcbx4Eb4Ky27qssKXwxCIH8ZC"
+	AccessToken     = "EAACEdEose0cBAPQeEO3dZBZBWTjG66umHO0C9w8Gr9QoP0hUzHoWkmZB5IerAAaBzfKwdkKu1KjPZBKsg0lO9VlacXGmltFkVgbGHPuKtnDszUZBYwPoo1ZAZCUMeXWo3R8JC2TIE8JZBTcDVYA4EE8E2Wi728J86HSDy78YyANWk50bOwjMG0xz"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -210,7 +212,45 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 	fmt.Println("First post:", posts[1])
 }
 
-func main() {
+func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
+	teams := make([][]string, 4)
+	teams[0] = []string{"joe", "matt"}
+	teams[1] = []string{"tj", "cody"}
+	teams[2] = []string{"george", "jim"}
+	teams[3] = []string{"ted", "tim"}
+
+	firstRound := make([][]interface{}, 4)
+	firstRound[0] = []interface{}{1, 0, "g1"}
+	firstRound[1] = []interface{}{nil, nil, "g2"}
+	firstRound[2] = []interface{}{nil, nil, "g3"}
+	firstRound[3] = []interface{}{nil, nil, "g4"}
+
+	secondRound := make([][]interface{}, 2)
+	secondRound[0] = []interface{}{nil, nil, "g5"}
+	secondRound[1] = []interface{}{nil, nil, "g6"}
+
+	thirdRound := make([][]interface{}, 2)
+	thirdRound[0] = []interface{}{nil, nil, "g7"}
+	thirdRound[1] = []interface{}{nil, nil, "g8"}
+
+	results := make([]interface{}, 3)
+	results[0] = firstRound
+	results[1] = secondRound
+	results[2] = thirdRound
+
+	// bracket := Bracket{teams, results}
+	bracket := fullBracket()
+	js, err := json.Marshal(bracket)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func setupDatabase() {
 	// sqlite setup and verification
 	db, err := sql.Open("sqlite3", "herp.db")
 	if err != nil {
@@ -230,22 +270,27 @@ func main() {
 
 	CreateContenderTable(db)
 	CreatePostsTable(db)
+}
 
+func getFBData() {
 	// Facebook setup
 	var myAccessToken = GetAccessToken()
 
 	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
 	session := globalApp.Session(myAccessToken)
-	err = session.Validate()
+	err := session.Validate()
 	handle_error("Error validating session", err, true)
 
 	contenders := populateContenders(session)
 	fmt.Println("number of members:", len(contenders))
 
 	populateTotalPosts(contenders, session)
+}
 
-	// Extract post data for users
-	// example API call on post gotten from feed
-	// 208678979226870_1036221373139289?fields=attachments,comments,likes,from,description,created_time,name,picture,status_type,type,caption
+func main() {
+	// setupDatabase()
+	// getFBData()
+	http.HandleFunc("/bracketData/", bracketDataHandler)
+	http.ListenAndServe(":8080", nil)
 }
