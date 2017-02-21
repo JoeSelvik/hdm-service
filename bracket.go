@@ -25,6 +25,15 @@ func CreateBracketTable(db *sql.DB) {
 	}
 }
 
+func (b *Bracket) DBTableName() string {
+	return "brackets"
+}
+
+// Path will supply the URL extension for a Bracket resource
+func (b *Bracket) Path() string {
+	return "/brackets/"
+}
+
 func (b *Bracket) UpdateResults() {
 
 }

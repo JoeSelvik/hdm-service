@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAPQeEO3dZBZBWTjG66umHO0C9w8Gr9QoP0hUzHoWkmZB5IerAAaBzfKwdkKu1KjPZBKsg0lO9VlacXGmltFkVgbGHPuKtnDszUZBYwPoo1ZAZCUMeXWo3R8JC2TIE8JZBTcDVYA4EE8E2Wi728J86HSDy78YyANWk50bOwjMG0xz"
+	AccessToken     = "EAACEdEose0cBAKccsRcHjeCjZBuIZCbEKwZATZBvCwZAdQ1SxzvKvDVCRjirQlEl7RHdZCQIdFWVHttPLolaoNGErAyKT9kJSYUgombSjm1F7Xp5zDkXNnbWxmnQXPFf8UYDZCY0U553POh1N8krKsC9C8ookbUE2Xu7zd9ImG3iNU2fbwQM3Jj"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -119,6 +119,7 @@ func setupDatabase() {
 
 	CreateContenderTable(db)
 	CreatePostsTable(db)
+	// CreateBracketTable(db)
 }
 
 func getFBData() {
@@ -138,8 +139,8 @@ func getFBData() {
 }
 
 func main() {
-	// setupDatabase()
-	// getFBData()
+	setupDatabase()
+	getFBData()
 	http.HandleFunc("/bracketData/", bracketDataHandler)
 	http.ListenAndServe(":8080", nil)
 }

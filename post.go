@@ -30,6 +30,14 @@ func CreatePostsTable(db *sql.DB) {
 	}
 }
 
+func (p *Post) DBTableName() string {
+	return "posts"
+}
+
+func (p *Post) Path() string {
+	return "/posts/"
+}
+
 func populateTotalPosts(contenders []Contender, session *fb.Session) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{
