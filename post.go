@@ -38,7 +38,7 @@ func (p *Post) Path() string {
 	return "/posts/"
 }
 
-func populateTotalPosts(contenders []Contender, session *fb.Session) {
+func GetPosts(contenders []Contender, session *fb.Session) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
@@ -60,7 +60,7 @@ func populateTotalPosts(contenders []Contender, session *fb.Session) {
 		// load data from each facebookPost into a Post struct
 		for i := 0; i < len(results); i++ {
 			var p Post
-			facebookPost := fb.Result(results[i])
+			facebookPost := fb.Result(results[i]) // cast the var
 
 			id := facebookPost.Get("id")
 			p.Id = id.(string)

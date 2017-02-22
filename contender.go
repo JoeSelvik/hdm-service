@@ -7,4 +7,5 @@ type Contender struct {
 	TotalLikesReceived int
 	AvgLikePerPost     int
 	TotalLikesGiven    int
+	PictureURL         string
 }

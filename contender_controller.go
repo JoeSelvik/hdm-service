@@ -45,23 +45,22 @@ func (cc *ContenderController) Path() string {
 	return "/contenders/"
 }
 
-func (cc *ContenderController) Create(c *Contender) (*Contender, error) {
-	// Put this new User into the db
-	m, err := cc.DB().Create(uc, u)
-	if err != nil {
-		return nil, err
-	}
-}
+// // CreateContender places a Contender in the table and returns one
+// func CreateContender(c *Contender) (*Contender, error) {
 
-// Returns a slice of Contenders for a given *Session
-func populateContenders(session *fb.Session) []Contender {
+// }
+
+// Returns a slice of Contenders for a given *Session from a FB group
+func GetContenders(session *fb.Session) []Contender {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
+		"feilds":       []string{"name", "id", "picture", "context", "cover"},
 	})
 	handle_error("Error when getting group members", err, true)
+	fmt.Println(response)
 
-	// Create the paging object for /members response
+	// Get the member's paging object
 	paging, err := response.Paging(session)
 	handle_error("Error when generating the members responses Paging object", err, true)
 
@@ -70,10 +69,15 @@ func populateContenders(session *fb.Session) []Contender {
 	for {
 		results := paging.Data()
 
-		// map[administrator:false name:Jacob Glowacki id:1822807864675176]
-		var c Contender
-
 		for i := 0; i < len(results); i++ {
+			// map[administrator:false name:Jacob Glowacki id:1822807864675176]
+			var c Contender
+			facebookContender := fb.Result(results[i]) // cast the var
+			fmt.Println(facebookContender)
+			fmt.Println(facebookContender.Get("name"))
+			fmt.Println(facebookContender.Get("id"))
+			fmt.Println(facebookContender.Get("picture"))
+
 			results[i].Decode(&c)
 			contenders = append(contenders, c)
 		}

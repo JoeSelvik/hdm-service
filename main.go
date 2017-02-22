@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAKccsRcHjeCjZBuIZCbEKwZATZBvCwZAdQ1SxzvKvDVCRjirQlEl7RHdZCQIdFWVHttPLolaoNGErAyKT9kJSYUgombSjm1F7Xp5zDkXNnbWxmnQXPFf8UYDZCY0U553POh1N8krKsC9C8ookbUE2Xu7zd9ImG3iNU2fbwQM3Jj"
+	AccessToken     = "EAACEdEose0cBAEYaQdIKek0Lt3FQvYzZCKb7v0ZCFlGxIoZAe7p4bljkvCMThpm1aZBXg0MfUrriZBoKCJwc9C5tLYqglJbiaQG7Q3yaL7SMEdZAliMQAfde6WZANZA0b6rpbqo8i2w2bZAOi48e30XcZBxe6wSFMSMiciDgrxmZBkzy37mtCIyZBlHp"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -132,15 +132,19 @@ func getFBData() {
 	err := session.Validate()
 	handle_error("Error validating session", err, true)
 
-	contenders := populateContenders(session)
+	contenders := GetContenders(session)
 	fmt.Println("number of members:", len(contenders))
+	// for i := 0; i < len(contenders); i++ {
+	// 	fmt.Println(contenders[i])
+	// }
 
-	populateTotalPosts(contenders, session)
+	GetPosts(contenders, session)
 }
 
 func main() {
 	setupDatabase()
 	getFBData()
-	http.HandleFunc("/bracketData/", bracketDataHandler)
-	http.ListenAndServe(":8080", nil)
+
+	// http.HandleFunc("/bracketData/", bracketDataHandler)
+	// http.ListenAndServe(":8080", nil)
 }
