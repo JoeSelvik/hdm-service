@@ -58,7 +58,6 @@ func GetContenders(session *fb.Session) []Contender {
 		"feilds":       []string{"name", "id", "picture", "context", "cover"},
 	})
 	handle_error("Error when getting group members", err, true)
-	fmt.Println(response)
 
 	// Get the member's paging object
 	paging, err := response.Paging(session)
@@ -69,16 +68,13 @@ func GetContenders(session *fb.Session) []Contender {
 	for {
 		results := paging.Data()
 
+		// map[administrator:false name:Jacob Glowacki id:1822807864675176]
 		for i := 0; i < len(results); i++ {
-			// map[administrator:false name:Jacob Glowacki id:1822807864675176]
 			var c Contender
 			facebookContender := fb.Result(results[i]) // cast the var
-			fmt.Println(facebookContender)
-			fmt.Println(facebookContender.Get("name"))
-			fmt.Println(facebookContender.Get("id"))
-			fmt.Println(facebookContender.Get("picture"))
+			c.Id = facebookContender.Get("id").(string)
+			c.Name = facebookContender.Get("name").(string)
 
-			results[i].Decode(&c)
 			contenders = append(contenders, c)
 		}
 
@@ -89,5 +85,6 @@ func GetContenders(session *fb.Session) []Contender {
 		}
 	}
 
+	fmt.Println("Number of Contenders:", len(contenders))
 	return contenders
 }

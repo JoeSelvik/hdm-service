@@ -62,17 +62,11 @@ func GetPosts(contenders []Contender, session *fb.Session) {
 			var p Post
 			facebookPost := fb.Result(results[i]) // cast the var
 
-			id := facebookPost.Get("id")
-			p.Id = id.(string)
+			p.Id = facebookPost.Get("id").(string)
+			p.Author = facebookPost.Get("from.name").(string)
+			p.CreatedDate = facebookPost.Get("created_time").(string)
 
-			author := facebookPost.Get("from.name")
-			p.Author = author.(string)
-
-			createdDate := facebookPost.Get("created_time")
-			p.CreatedDate = createdDate.(string)
-
-			likesData := facebookPost.Get("likes.data")
-			if likesData != nil {
+			if facebookPost.Get("likes.data") != nil {
 				numLikes := facebookPost.Get("likes.data").([]interface{})
 				p.TotalLikes = len(numLikes)
 			} else {

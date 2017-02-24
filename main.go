@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAEYaQdIKek0Lt3FQvYzZCKb7v0ZCFlGxIoZAe7p4bljkvCMThpm1aZBXg0MfUrriZBoKCJwc9C5tLYqglJbiaQG7Q3yaL7SMEdZAliMQAfde6WZANZA0b6rpbqo8i2w2bZAOi48e30XcZBxe6wSFMSMiciDgrxmZBkzy37mtCIyZBlHp"
+	AccessToken     = "EAACEdEose0cBAEuZBgF0DKHNvZCnWPJmXhn7DcTrPH79ZAyeEAcsuW4mdERjI48M7DdCHqZAqrOhJ4baOnXiA6mmZB6kV51h6I8tRWRAbqj294zq7THhpfOKS2Dh9eBZC45eUHaIIRjdeggTpxkNdSptUK293jgspsov4Fv8JFVj5ZCZCr9AjhFH"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -133,11 +133,6 @@ func getFBData() {
 	handle_error("Error validating session", err, true)
 
 	contenders := GetContenders(session)
-	fmt.Println("number of members:", len(contenders))
-	// for i := 0; i < len(contenders); i++ {
-	// 	fmt.Println(contenders[i])
-	// }
-
 	GetPosts(contenders, session)
 }
 
