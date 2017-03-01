@@ -22,7 +22,9 @@ func CreateContenderTable(db *sql.DB) {
 		TotalPosts INT,
 		TotalLikesReceived INT,
 		AvgLikesPerPost INT,
-		TotalLikesGiven INT
+		TotalLikesGiven INT,
+		CreatedAt DATETIME,
+		UpdatedAt DATETIME
 	);
 	`
 
@@ -30,6 +32,19 @@ func CreateContenderTable(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
+
+	// var session = GetFBSession()
+	// fbContenders = GetFBContenders(session)
+
+	// for c in fbContenders
+}
+
+func UpdateContenderTable() {
+
+}
+
+func UpdateHDMContenderDependentData() {
+
 }
 
 // DB returns the database associated with the Contender resources
@@ -45,13 +60,39 @@ func (cc *ContenderController) Path() string {
 	return "/contenders/"
 }
 
-// // CreateContender places a Contender in the table and returns one
-// func CreateContender(c *Contender) (*Contender, error) {
+// StoreContender places a Contender in the table and returns one
+func CreateHDMContender(c *Contender, db *sql.DB) {
+	sql_additem := `
+	INSERT OR REPLACE INTO contenders(
+		Id,
+		Name,
+		TotalPosts,
+		TotalLikesReceived,
+		AvgLikesPerPost,
+		TotalLikesGiven,
+		CreatedAt,
+		UpdatedAt
+	) values(?, ?, ?, ?, ?, ? CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`
 
-// }
+	stmt, err := db.Prepare(sql_additem)
+	if err != nil {
+		panic(err)
+	}
+	defer stmt.Close()
+
+	_, err2 := stmt.Exec(c.Id, c.Name, c.TotalPosts, c.TotalLikesReceived, c.AvgLikePerPost, c.TotalLikesGiven)
+	if err2 != nil {
+		panic(err2)
+	}
+}
+
+func GetHDMContenders() {
+
+}
 
 // Returns a slice of Contenders for a given *Session from a FB group
-func GetContenders(session *fb.Session) []Contender {
+func GetFBContenders(session *fb.Session) []Contender {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
@@ -87,4 +128,20 @@ func GetContenders(session *fb.Session) []Contender {
 
 	fmt.Println("Number of Contenders:", len(contenders))
 	return contenders
+}
+
+func (cc *ContenderController) updateIndependentData() {
+
+}
+
+func (cc *ContenderController) updateTotalPosts() {
+
+}
+
+func (cc *ContenderController) updateTotalLikesRx() {
+
+}
+
+func (cc *ContenderController) updateTotalLikesGiven() {
+
 }

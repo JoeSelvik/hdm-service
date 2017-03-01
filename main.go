@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAEuZBgF0DKHNvZCnWPJmXhn7DcTrPH79ZAyeEAcsuW4mdERjI48M7DdCHqZAqrOhJ4baOnXiA6mmZB6kV51h6I8tRWRAbqj294zq7THhpfOKS2Dh9eBZC45eUHaIIRjdeggTpxkNdSptUK293jgspsov4Fv8JFVj5ZCZCr9AjhFH"
+	AccessToken     = "EAACEdEose0cBADGrWaKYWqrfXxSAu5EVKRZAfhZAbf7uS9bLjdGi2ZCK5zTAnpBgZCzjmGjVynq2as2kZAxOB6egKA3OAkXPUuVmqRZAwdIAWOAoSELJGPh5HGIZAej8wjy0WP2FTPhva5ePXZAb5kW1gAKHiQWZAmcJ495KziYitBNWvN9wwu3TD"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -36,6 +36,16 @@ func handle_error(msg string, err error, exit bool) {
 func GetAccessToken() string {
 	var accessToken = AccessToken
 	return accessToken
+}
+
+func GetFBSession() *fb.Session {
+	// "your-app-id", "your-app-secret", from 'development' app I made
+	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
+	session := globalApp.Session(GetAccessToken())
+	err := session.Validate()
+	handle_error("Error validating session", err, true)
+
+	return session
 }
 
 // GetUserID returns the user's id associated with the access token provided for the app.
@@ -61,7 +71,7 @@ func GetGroupID() string {
 	return groupID
 }
 
-func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
+func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	teams := make([][]string, 4)
 	teams[0] = []string{"joe", "matt"}
 	teams[1] = []string{"tj", "cody"}
@@ -123,23 +133,16 @@ func setupDatabase() {
 }
 
 func getFBData() {
-	// Facebook setup
-	var myAccessToken = GetAccessToken()
-
-	// "your-app-id", "your-app-secret", from 'development' app I made
-	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
-	session := globalApp.Session(myAccessToken)
-	err := session.Validate()
-	handle_error("Error validating session", err, true)
-
-	contenders := GetContenders(session)
-	GetPosts(contenders, session)
+	var session = GetFBSession()
+	_ = GetFBContenders(session)
+	// GetPosts(contenders, session)
+	fmt.Println("FB connection works")
 }
 
 func main() {
 	setupDatabase()
 	getFBData()
 
-	// http.HandleFunc("/bracketData/", bracketDataHandler)
+	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	// http.ListenAndServe(":8080", nil)
 }
