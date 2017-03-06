@@ -40,7 +40,7 @@ func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 		TotalLikesGiven,
 		CreatedAt,
 		UpdatedAt
-	) values(?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	) values (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
 
 	posts, err := json.Marshal(c.TotalPosts)
@@ -127,14 +127,14 @@ func CreateContenderTable(db *sql.DB) error {
 	return nil
 }
 
-func UpdateContenderTable() {
-	session := GetFBSession()
-	db := GetDBHandle()
-	fbContenders := GetFBContenders(session)
-	contenders := GetHDMContenders(db)
+// func UpdateContenderTable() {
+// 	session := GetFBSession()
+// 	db := GetDBHandle()
+// 	fbContenders := GetFBContenders(session)
+// 	contenders := GetHDMContenders(db)
 
-	for c 
-}
+// 	for c
+// }
 
 func UpdateHDMContenderDependentData() {
 

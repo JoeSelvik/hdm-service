@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBANv1DuQjZArOtg9btqjoqjVp9ZC1aF1yZC0unjuwy0pbFdrzGZAq4wQmuZBl6UZAIG6WuXXa7UWu4fS4gnXC1AhsOFtsZA9BA1DreXMRBbFMjMRQzG5sFk8cTI7SOjW6JiG8cIA7sOimW2m30PSIxLhJ9crBHHTZBfqeh21qyHrg"
+	AccessToken     = "EAACEdEose0cBAGByVlbJVyzN25XKUf4iFfHuYLqZCdR96deCAVqYnBHpuxRv0PtjIa5OtZBaAZAvuEDEgdUujTf1HjxqcDdjsEw8CyEa4lqmjFdOhIy7NZC5NeK6J3goskojJEnBAMBe2pnWTZBHm4YYUzBm0ozigbRR6OMHQ8A2xKYCMGHuZC"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -135,30 +135,35 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 
 func setupDatabase() {
 	db := GetDBHandle()
-	err := CreateContenderTable(db)
+	// err := CreateContenderTable(db)
+	// if err != nil {
+	// 	log.Println("Failed to create contenders table:", err)
+	// 	return
+	// }
+
+	err := CreatePostsTable("blah", db)
 	if err != nil {
 		log.Println("Failed to create contenders table:", err)
 		return
 	}
-	CreatePostsTable(db)
-	// CreateBracketTable(db)
+
+	// bracket tables
 }
 
 func getFBData() {
-	// var session = GetFBSession()
+	var session = GetFBSession()
 	// _ = GetFBContenders(session)
+	_ = GetFBPosts("blah", session)
 
-	db := GetDBHandle()
-	contenders, err := GetHDMContenders(db)
-	handle_error("issue getting hdm contdenders", err, true)
-	fmt.Println("Number of Contenders:", len(contenders))
-
-	// GetPosts(contenders, session)
+	// db := GetDBHandle()
+	// contenders, err := GetHDMContenders(db)
+	// handle_error("issue getting hdm contdenders", err, true)
+	// fmt.Println("Number of Contenders:", len(contenders))
 }
 
 func main() {
-	// setupDatabase()
-	getFBData()
+	setupDatabase()
+	// getFBData()
 
 	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	// http.ListenAndServe(":8080", nil)
