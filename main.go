@@ -11,12 +11,13 @@ import (
 	"fmt"
 	fb "github.com/huandu/facebook"
 	_ "github.com/mattn/go-sqlite3"
+	"log"
 	"net/http"
 	"os"
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBADGrWaKYWqrfXxSAu5EVKRZAfhZAbf7uS9bLjdGi2ZCK5zTAnpBgZCzjmGjVynq2as2kZAxOB6egKA3OAkXPUuVmqRZAwdIAWOAoSELJGPh5HGIZAej8wjy0WP2FTPhva5ePXZAb5kW1gAKHiQWZAmcJ495KziYitBNWvN9wwu3TD"
+	AccessToken     = "EAACEdEose0cBANv1DuQjZArOtg9btqjoqjVp9ZC1aF1yZC0unjuwy0pbFdrzGZAq4wQmuZBl6UZAIG6WuXXa7UWu4fS4gnXC1AhsOFtsZA9BA1DreXMRBbFMjMRQzG5sFk8cTI7SOjW6JiG8cIA7sOimW2m30PSIxLhJ9crBHHTZBfqeh21qyHrg"
 	HerpDerpGroupID = "208678979226870"
 )
 
@@ -71,6 +72,29 @@ func GetGroupID() string {
 	return groupID
 }
 
+// GetDBHandle returns an active handle to the sqlite db
+func GetDBHandle() *sql.DB {
+	var dbPath = "hdm_dm.db"
+
+	// sqlite setup and verification
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		panic(fmt.Sprintf("Error when opening sqlite3: %s", err))
+	}
+
+	if db == nil {
+		panic("db nil")
+	}
+
+	// sql.open may just validate its arguments without creating a connection to the database.
+	// To verify that the data source name is valid, call Ping.
+	err = db.Ping()
+	if err != nil {
+		panic(fmt.Sprintf("Error when pinging db: %s", err))
+	}
+	return db
+}
+
 func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	teams := make([][]string, 4)
 	teams[0] = []string{"joe", "matt"}
@@ -110,37 +134,30 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupDatabase() {
-	// sqlite setup and verification
-	db, err := sql.Open("sqlite3", "herp.db")
+	db := GetDBHandle()
+	err := CreateContenderTable(db)
 	if err != nil {
-		panic(fmt.Sprintf("Error when opening sqlite3: %s", err))
+		log.Println("Failed to create contenders table:", err)
+		return
 	}
-
-	if db == nil {
-		panic("db nil")
-	}
-
-	// sql.open may just validate its arguments without creating a connection to the database.
-	// To verify that the data source name is valid, call Ping.
-	err = db.Ping()
-	if err != nil {
-		panic(fmt.Sprintf("Error when pinging db: %s", err))
-	}
-
-	CreateContenderTable(db)
 	CreatePostsTable(db)
 	// CreateBracketTable(db)
 }
 
 func getFBData() {
-	var session = GetFBSession()
-	_ = GetFBContenders(session)
+	// var session = GetFBSession()
+	// _ = GetFBContenders(session)
+
+	db := GetDBHandle()
+	contenders, err := GetHDMContenders(db)
+	handle_error("issue getting hdm contdenders", err, true)
+	fmt.Println("Number of Contenders:", len(contenders))
+
 	// GetPosts(contenders, session)
-	fmt.Println("FB connection works")
 }
 
 func main() {
-	setupDatabase()
+	// setupDatabase()
 	getFBData()
 
 	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
