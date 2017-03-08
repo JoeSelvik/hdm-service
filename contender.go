@@ -74,8 +74,12 @@ func (c *Contender) updateTotalLikesRx() {
 
 }
 
+// only incraments by one
 func (c *Contender) updateTotalLikesGiven() {
-
+	c.TotalLikesGiven++
+	q = `update contenders set TotalLikesGiven = TotalLikesGiven + 1 where Name='?';`
+	db := GetDBHandle()
+	_, err := db.Exec(q, c.Name)
 }
 
 // CreateContenderTable creates the contenders table if it does not exist
