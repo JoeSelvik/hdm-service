@@ -75,11 +75,15 @@ func (c *Contender) updateTotalLikesRx() {
 }
 
 // only incraments by one
-func (c *Contender) updateTotalLikesGiven() {
+func (c *Contender) updateTotalLikesGiven(tx *sql.Tx) error {
 	c.TotalLikesGiven++
-	q = `update contenders set TotalLikesGiven = TotalLikesGiven + 1 where Name='?';`
-	db := GetDBHandle()
-	_, err := db.Exec(q, c.Name)
+	q := `update contenders set TotalLikesGiven = TotalLikesGiven + 1 where Name='?';`
+	_, err := tx.Exec(q, c.Name)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven", c.Name))
+		return err
+	}
+	return nil
 }
 
 // CreateContenderTable creates the contenders table if it does not exist
@@ -159,16 +163,18 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	var createdAt *time.Time
 	var updatedAt *time.Time
 
-	err := db.QueryRow(q, name).Scan(&id, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
+	// todo: is this bad overwritting name?
+	err := db.QueryRow(q, name).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No user with that ID.")
 		return nil, err
 	case err != nil:
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
 		return nil, err
 	default:
-		fmt.Printf("Username is %s\n", name)
+		log.Printf("Username is %s\n", name)
+		log.Printf("totalPosts is %s\n", totalPosts)
 
 		var posts []string
 		json.Unmarshal([]byte(totalPosts), &posts)
@@ -283,6 +289,6 @@ func GetFBContenders(session *fb.Session) ([]Contender, error) {
 		}
 	}
 
-	fmt.Println("Number of Contenders:", len(contenders))
+	log.Println("Number of Contenders:", len(contenders))
 	return contenders, nil
 }

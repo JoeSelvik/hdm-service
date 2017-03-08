@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAAmg1hKFs34c3peBRSLrZCuep0kmWHzTaOTLPmdXBpLZCp8ixcRdpOBL1r90ChtWbcsOSBZCai8o9KglgkSxYNKKEl1ZCmKw5KE80oVEmX5xVkPAO6zkqaiU4ZBLWURv2zdcmXtEYVP5YTvradSRZCPTyvPdzrKlzhVJmuZB7mn"
+	AccessToken     = "EAACEdEose0cBAJ1opHag7lSp3rTvFuVK8AafMklYzdclUFzfehb9RJGqfmUkcTp4oVrERTNZBtk8VAQy8exStxvYlpZAUP4Bm1A9uZB64RG6riS8ZAFKAyVMtdjbktOIiBGcvo7EQsZCEuP24YcLgTKfICGQ9Sm83T26zRiZCfmxZA2qYlUZCRxy"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -140,7 +140,7 @@ func GetStartTime() time.Time {
 	// sqlite CURRENT_TIMESTAMP: 2017-03-06 15:36:17
 	// Golang template time      Mon, 01/02/06, 03:04PM
 	// HDM golang template       Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
-	value := "2016-01-01T00:00:00+0000"
+	value := "2017-01-01T00:00:00+0000"
 	t, err := time.Parse(GoTimeLayout, value)
 	handle_error("Could not parse start time", err, true)
 	return t

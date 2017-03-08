@@ -90,11 +90,27 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	defer tx.Rollback()
 
 	for i := 0; i < len(fbPosts); i++ {
-		// should this check if post already exists?
+		// Create each Post in DB
+		// todo: should this check if post already exists?
 		_, err := fbPosts[i].CreatePost(tx)
 		if err != nil {
 			return err
 		}
+
+		// for each like, give a likes given
+		log.Printf("Updating likes on %s's post\n", fbPosts[i].Author)
+		log.Printf("likes %s\n", fbPosts[i].TotalLikes)
+		for j := 0; j < fbPosts[i].TotalLikes; j++ {
+			c, err := GetContenderByUsername(GetDBHandle(), fbPosts[i].Author)
+			if err != nil {
+				return err
+			}
+			err = c.updateTotalLikesGiven(tx)
+			if err != nil {
+				return err
+			}
+		}
+		log.Printf("updated %s's posts likes\n\n", fbPosts[i].Author)
 	}
 
 	// Commit the transaction.
@@ -157,13 +173,6 @@ Loop:
 			if facebookPost.Get("likes.data") != nil {
 				numLikes := facebookPost.Get("likes.data").([]interface{})
 				p.TotalLikes = len(numLikes)
-
-				// for each like, give a likes given
-				for j := 0; i < len(numLikes); j++ {
-					c := GetContenderByUsername(GetDBHandle(), p.Author)
-
-				}
-
 			} else {
 				p.TotalLikes = 0
 			}
@@ -177,11 +186,11 @@ Loop:
 			return nil, err
 		}
 		if noMore {
-			fmt.Println("Reached the end of group feed")
+			log.Println("Reached the end of group feed")
 			break Loop
 		}
 		count++
 	}
-	fmt.Println("Number posts:", len(posts))
+	log.Println("Number posts:", len(posts))
 	return posts, nil
 }
