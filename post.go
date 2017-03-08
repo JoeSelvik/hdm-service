@@ -56,9 +56,9 @@ func (p *Post) updateTotalLikes(n int) {
 }
 
 // CreatePostsTable creates the posts table if it does not exist
-func CreatePostsTable(startDate string, db *sql.DB) error {
+func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	q := `
-	CREATE TABLE posts(
+	CREATE TABLE IF NOT EXISTS posts(
 		Id TEXT NOT NULL,
 		PostedDate DATETIME,
 		Author TEXT,
@@ -76,7 +76,11 @@ func CreatePostsTable(startDate string, db *sql.DB) error {
 	}
 
 	session := GetFBSession()
-	fbPosts := GetFBPosts("blah", session)
+	fbPosts, err := GetFBPosts(startDate, session)
+	if err != nil {
+		log.Fatal("Failed to get posts from facebook")
+		return err
+	}
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -102,23 +106,32 @@ func CreatePostsTable(startDate string, db *sql.DB) error {
 	return nil
 }
 
-func GetFBPosts(startDate string, session *fb.Session) []Post {
+func GetFBPosts(startDate time.Time, session *fb.Session) ([]Post, error) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
 		"feilds":       []string{"from", "created_time"},
 	})
-	handle_error("Error when getting feed", err, true)
+	if err != nil {
+		log.Fatal("Error requesting group feed")
+		return nil, err
+	}
 
 	// Get the feed's paging object
 	paging, err := response.Paging(session)
-	handle_error("Error when generating the feed responses Paging object", err, true)
+	if err != nil {
+		log.Fatal("Error generating the feed response Paging object")
+		return nil, err
+	}
 
 	var posts []Post
+	count := 1
 
 	// loop until a fb post's created_time is older than startDate
+Loop:
 	for {
 		results := paging.Data()
+		fmt.Println("Posts page ", count)
 
 		// 25 posts per page, load data into a Post struct
 		for i := 0; i < len(results); i++ {
@@ -126,51 +139,49 @@ func GetFBPosts(startDate string, session *fb.Session) []Post {
 			facebookPost := fb.Result(results[i]) // cast the var
 			p.PostedDate = facebookPost.Get("created_time").(string)
 
-			// break if post is older than startDate
-			// fb created_time str:      2017-03-04T13:05:20+0000
-			// sqlite CURRENT_TIMESTAMP: 2017-03-06 15:36:17
-			// layout := "Mon, 01/02/06, 03:04PM"
-			// layout := "Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)"
-			value := "2017-03-04T13:05:20+0000"
-			layout := "2006-01-02T15:04:05+0000"
-			t, err := time.Parse(layout, p.PostedDate)
+			// stop when post reaches startDate
+			t, err := time.Parse(GoTimeLayout, p.PostedDate)
 			if err != nil {
 				log.Fatal("Failed to parse post's postedDate")
-				return nil
+				return nil, err
 			}
-			t.
-				p.Id = facebookPost.Get("id").(string)
+			if t.Before(startDate) {
+				log.Println("Reached a post before the startDate")
+				break Loop
+			}
+
+			p.Id = facebookPost.Get("id").(string)
 			p.Author = facebookPost.Get("from.name").(string)
+			p.PostedDate = t.String()
 
 			if facebookPost.Get("likes.data") != nil {
 				numLikes := facebookPost.Get("likes.data").([]interface{})
 				p.TotalLikes = len(numLikes)
 
 				// for each like, give a likes given
+				for j := 0; i < len(numLikes); j++ {
+					c := GetContenderByUsername(GetDBHandle(), p.Author)
+
+				}
+
 			} else {
 				p.TotalLikes = 0
 			}
 
 			posts = append(posts, p)
-
-		}
-
-		count++
-		fmt.Println("finished lap:", count)
-
-		if count >= 1 {
-			fmt.Println("found first 25 posts")
-			break
 		}
 
 		noMore, err := paging.Next()
-		handle_error("Error when accessing responses Next in loop", err, true)
-		if noMore {
-			fmt.Println("Reached the end of the feed!")
-			break
+		if err != nil {
+			log.Fatal("Error accessing Response page's Next object")
+			return nil, err
 		}
+		if noMore {
+			fmt.Println("Reached the end of group feed")
+			break Loop
+		}
+		count++
 	}
-	// fmt.Println("number posts:", len(posts))
-	// fmt.Println("First post:", posts[1])
-	return posts
+	fmt.Println("Number posts:", len(posts))
+	return posts, nil
 }

@@ -101,7 +101,11 @@ func CreateContenderTable(db *sql.DB) error {
 	}
 
 	session := GetFBSession()
-	fbContenders := GetFBContenders(session)
+	fbContenders, err := GetFBContenders(session)
+	if err != nil {
+		log.Fatal("Failed to get members from facebook")
+		return err
+	}
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -232,17 +236,23 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 }
 
 // Returns a slice of Contenders for a given *Session from a FB group
-func GetFBContenders(session *fb.Session) []Contender {
+func GetFBContenders(session *fb.Session) ([]Contender, error) {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
 		"access_token": GetAccessToken(),
 		"feilds":       []string{"name", "id", "picture", "context", "cover"},
 	})
-	handle_error("Error when getting group members", err, true)
+	if err != nil {
+		log.Fatal("Error requesting group members")
+		return nil, err
+	}
 
 	// Get the member's paging object
 	paging, err := response.Paging(session)
-	handle_error("Error when generating the members responses Paging object", err, true)
+	if err != nil {
+		log.Fatal("Error generating the member response Paging object")
+		return nil, err
+	}
 
 	var contenders []Contender
 
@@ -260,12 +270,15 @@ func GetFBContenders(session *fb.Session) []Contender {
 		}
 
 		noMore, err := paging.Next()
-		handle_error("Error when accessing responses Next in loop:", err, true)
+		if err != nil {
+			log.Fatal("Error accessing Response page's Next object")
+			return nil, err
+		}
 		if noMore {
 			break
 		}
 	}
 
 	fmt.Println("Number of Contenders:", len(contenders))
-	return contenders
+	return contenders, nil
 }

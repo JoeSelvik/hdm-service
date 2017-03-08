@@ -14,11 +14,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAGByVlbJVyzN25XKUf4iFfHuYLqZCdR96deCAVqYnBHpuxRv0PtjIa5OtZBaAZAvuEDEgdUujTf1HjxqcDdjsEw8CyEa4lqmjFdOhIy7NZC5NeK6J3goskojJEnBAMBe2pnWTZBHm4YYUzBm0ozigbRR6OMHQ8A2xKYCMGHuZC"
+	AccessToken     = "EAACEdEose0cBAAmg1hKFs34c3peBRSLrZCuep0kmWHzTaOTLPmdXBpLZCp8ixcRdpOBL1r90ChtWbcsOSBZCai8o9KglgkSxYNKKEl1ZCmKw5KE80oVEmX5xVkPAO6zkqaiU4ZBLWURv2zdcmXtEYVP5YTvradSRZCPTyvPdzrKlzhVJmuZB7mn"
 	HerpDerpGroupID = "208678979226870"
+	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
 
 func handle_error(msg string, err error, exit bool) {
@@ -133,17 +135,29 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
+func GetStartTime() time.Time {
+	// fb created_time str:      2017-03-04T13:05:20+0000
+	// sqlite CURRENT_TIMESTAMP: 2017-03-06 15:36:17
+	// Golang template time      Mon, 01/02/06, 03:04PM
+	// HDM golang template       Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
+	value := "2016-01-01T00:00:00+0000"
+	t, err := time.Parse(GoTimeLayout, value)
+	handle_error("Could not parse start time", err, true)
+	return t
+}
+
 func setupDatabase() {
 	db := GetDBHandle()
+
 	// err := CreateContenderTable(db)
 	// if err != nil {
 	// 	log.Println("Failed to create contenders table:", err)
 	// 	return
 	// }
 
-	err := CreatePostsTable("blah", db)
+	err := CreatePostsTable(GetStartTime(), db)
 	if err != nil {
-		log.Println("Failed to create contenders table:", err)
+		log.Println("Failed to create posts table:", err)
 		return
 	}
 
@@ -152,8 +166,10 @@ func setupDatabase() {
 
 func getFBData() {
 	var session = GetFBSession()
-	// _ = GetFBContenders(session)
-	_ = GetFBPosts("blah", session)
+	// _, err := GetFBContenders(session)
+	// handle_error("Error getting FBContenders", err, true)
+	_, err := GetFBPosts(GetStartTime(), session)
+	handle_error("Error getting FBPosts", err, true)
 
 	// db := GetDBHandle()
 	// contenders, err := GetHDMContenders(db)
