@@ -77,10 +77,11 @@ func (c *Contender) updateTotalLikesRx() {
 // only incraments by one
 func (c *Contender) updateTotalLikesGiven(tx *sql.Tx) error {
 	c.TotalLikesGiven++
-	q := `update contenders set TotalLikesGiven = TotalLikesGiven + 1 where Name='?';`
+	// todo: update updated time
+	q := `UPDATE contenders SET TotalLikesGiven = TotalLikesGiven + 1 WHERE Name=?;`
 	_, err := tx.Exec(q, c.Name)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven", c.Name))
+		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven: %v", c.Name, err))
 		return err
 	}
 	return nil
@@ -92,7 +93,7 @@ func CreateContenderTable(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS contenders(
 		Id TEXT NOT NULL,
 		Name TEXT,
-		TotalPosts INT,
+		TotalPosts BLOB,
 		TotalLikesReceived INT,
 		AvgLikesPerPost INT,
 		TotalLikesGiven INT,
@@ -137,6 +138,34 @@ func CreateContenderTable(db *sql.DB) error {
 	return nil
 }
 
+func UpdateHDMContenderDependentData() {
+	db := GetDBHandle()
+	posts, err := GetHDMPosts(db)
+	handle_error("Could not get posts", err, true)
+
+	tx, err := db.Begin()
+	handle_error("Failed to BEGIN txn", err, true)
+	defer tx.Rollback()
+
+	for i := 0; i < len(posts); i++ {
+		c, _ := GetContenderByUsername(db, posts[i].Author)
+		c.updateTotalPosts()
+		c.updateIndependentData()
+
+		// for each like, give a likes given
+		for j := 0; j < len(posts[i].Likes); j++ {
+			err = c.updateTotalLikesGiven(tx)
+			msg := fmt.Sprintf("Failed to update totalLikesGiven for contender %s", posts[i].Likes[j].Name)
+			handle_error(msg, err, true)
+		}
+	}
+
+	// Commit the transaction.
+	if err = tx.Commit(); err != nil {
+		log.Println("Failed to COMMIT txn:", err)
+	}
+}
+
 // func UpdateContenderTable() {
 // 	session := GetFBSession()
 // 	db := GetDBHandle()
@@ -146,15 +175,11 @@ func CreateContenderTable(db *sql.DB) error {
 // 	for c
 // }
 
-func UpdateHDMContenderDependentData() {
-
-}
-
 // todo: should I return *Contender or Contender?
 func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	q := "SELECT * FROM contenders WHERE name = ?"
 	var id string
-	var totalPosts string
+	var totalPosts string // sqlite blob later to be unmarshalled
 	var totalLikesReceived int
 	var avgLikesPerPost int
 	var totalLikesGiven int
@@ -202,7 +227,7 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 	for rows.Next() {
 		var id string
 		var name string
-		var totalPosts string
+		var totalPosts string // sqlite blob later to be unmarshalled
 		var totalLikesReceived int
 		var avgLikesPerPost int
 		var totalLikesGiven int
@@ -211,7 +236,7 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 
 		err := rows.Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Sprintf("Failed to scan contender from table: %v", err))
 			return nil, err
 		}
 
@@ -236,7 +261,6 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 		log.Fatal(err)
 		return nil, err
 	}
-
 	return contenders, nil
 }
 

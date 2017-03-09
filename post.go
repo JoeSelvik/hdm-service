@@ -107,20 +107,20 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 			return err
 		}
 
-		// for each like, give a likes given
-		db := GetDBHandle()
-		for j := 0; j < len(fbPosts[i].Likes); j++ {
-			c, err := GetContenderByUsername(db, fbPosts[i].Likes[j].Name)
-			if err != nil {
-				log.Println("Failed to get contender", fbPosts[i].Likes[j].Name)
-				return err
-			}
-			err = c.updateTotalLikesGiven(tx)
-			if err != nil {
-				log.Println("Failed to update totalLikesGiven for contender", fbPosts[i].Likes[j].Name)
-				return err
-			}
-		}
+		// // for each like, give a likes given
+		// db := GetDBHandle()
+		// for j := 0; j < len(fbPosts[i].Likes); j++ {
+		// 	c, err := GetContenderByUsername(db, fbPosts[i].Likes[j].Name)
+		// 	if err != nil {
+		// 		log.Println("Failed to get contender", fbPosts[i].Likes[j].Name)
+		// 		return err
+		// 	}
+		// 	err = c.updateTotalLikesGiven(tx)
+		// 	if err != nil {
+		// 		log.Println("Failed to update totalLikesGiven for contender", fbPosts[i].Likes[j].Name)
+		// 		return err
+		// 	}
+		// }
 	}
 
 	// Commit the transaction.
@@ -130,6 +130,52 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func GetHDMPosts(db *sql.DB) ([]Post, error) {
+	rows, err := db.Query("SELECT * FROM posts")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+
+	for rows.Next() {
+		var id string
+		var postedDate string // todo: should this be a time.Time?
+		var author string
+		var strLikes string // sqlite blob later to be unmarshalled
+		var createdAt *time.Time
+		var updatedAt *time.Time
+
+		err := rows.Scan(&id, &postedDate, &author, &strLikes, &createdAt, &updatedAt)
+		if err != nil {
+			log.Fatal(fmt.Sprintf("Failed to scan post from table: %v", err))
+			return nil, err
+		}
+
+		var likes []Like
+		json.Unmarshal([]byte(strLikes), likes)
+
+		p := Post{
+			Id:         id,
+			PostedDate: postedDate,
+			Author:     author,
+			Likes:      likes,
+			CreatedAt:  createdAt,
+			UpdatedAt:  updatedAt,
+		}
+		posts = append(posts, p)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Detected err from posts row scan: %v", err))
+		return nil, err
+	}
+	return posts, nil
 }
 
 func GetFBPosts(startDate time.Time, session *fb.Session) ([]Post, error) {
