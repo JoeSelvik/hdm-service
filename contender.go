@@ -66,8 +66,25 @@ func (c *Contender) updateIndependentData() {
 
 }
 
-func (c *Contender) updateTotalPosts() {
+func (c *Contender) updateTotalPosts(id string, tx *sql.Tx) {
+	// get up to dat contender fromdb for posts data
+	db := GetDBHandle()
 
+	// Get current posts for contender from DB
+	updatedContender, err := GetContenderByUsername(db, c.Name)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to get %s's TotalPosts's: %v", c.Name, err))
+	}
+
+	c.TotalPosts = append(updatedContender.TotalPosts, id)
+
+	// place back in db
+	// todo: update updated time
+	q := `UPDATE contenders SET TotalPosts = TotalPosts WHERE Name=?;`
+	_, err = tx.Exec(q, c.Name)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven: %v", c.Name, err))
+	}
 }
 
 func (c *Contender) updateTotalLikesRx() {
@@ -149,11 +166,15 @@ func UpdateHDMContenderDependentData() {
 
 	for i := 0; i < len(posts); i++ {
 		c, _ := GetContenderByUsername(db, posts[i].Author)
-		c.updateTotalPosts()
-		c.updateIndependentData()
+		log.Printf("Updating %s's post", c.Name)
+
+		// c.updateTotalPosts(posts[i].Id, tx)
+		// c.updateIndependentData()
 
 		// for each like, give a likes given
+		log.Printf("likes %v", posts[i].Likes)
 		for j := 0; j < len(posts[i].Likes); j++ {
+			log.Printf("%s liked it", posts[i].Likes[j].Name)
 			err = c.updateTotalLikesGiven(tx)
 			msg := fmt.Sprintf("Failed to update totalLikesGiven for contender %s", posts[i].Likes[j].Name)
 			handle_error(msg, err, true)

@@ -106,21 +106,6 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 			log.Printf("Failed to create post")
 			return err
 		}
-
-		// // for each like, give a likes given
-		// db := GetDBHandle()
-		// for j := 0; j < len(fbPosts[i].Likes); j++ {
-		// 	c, err := GetContenderByUsername(db, fbPosts[i].Likes[j].Name)
-		// 	if err != nil {
-		// 		log.Println("Failed to get contender", fbPosts[i].Likes[j].Name)
-		// 		return err
-		// 	}
-		// 	err = c.updateTotalLikesGiven(tx)
-		// 	if err != nil {
-		// 		log.Println("Failed to update totalLikesGiven for contender", fbPosts[i].Likes[j].Name)
-		// 		return err
-		// 	}
-		// }
 	}
 
 	// Commit the transaction.

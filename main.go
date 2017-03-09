@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAASQ1VQSotthYZAdzvGIELh6j7U1O09jWy94c4qhkZCuVY6xyiyWLlCMscVXhDZCP76cEoiXrjqehuBHaKVGLCgl59JHB6e1nzOwvZCfTdSZA7Q5xm12SpEhtcabBXbxXK64ZBvdGcDKhOz6QwplRcyzLZBgIFzZB7BGVhQtx7m2"
+	AccessToken     = "EAACEdEose0cBAEwZBTGBltBhy3CJhvYsqDGdmprctVkcfolyV7hRuhcytheVaUCFqoSyygsq9Yd642lacztD8BbmMfJzt0pN0KTzQq9dNOk3YSVlsTWqK0KjRZCVsd7VqpTDYqZBacE0TWUS5AdpXRBndgKwzj1LU7JBwyOegxLAPnt9H0THnnVSDx2qSgZD"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -149,13 +149,13 @@ func GetStartTime() time.Time {
 func setupDatabase() {
 	db := GetDBHandle()
 
-	// err := CreateContenderTable(db)
-	// if err != nil {
-	// 	log.Println("Failed to create contenders table:", err)
-	// 	return
-	// }
+	err := CreateContenderTable(db)
+	if err != nil {
+		log.Println("Failed to create contenders table:", err)
+		return
+	}
 
-	err := CreatePostsTable(GetStartTime(), db)
+	err = CreatePostsTable(GetStartTime(), db)
 	if err != nil {
 		log.Println("Failed to create posts table:", err)
 		return
@@ -178,7 +178,8 @@ func getFBData() {
 }
 
 func main() {
-	setupDatabase()
+	// setupDatabase()
+	UpdateHDMContenderDependentData()
 	// getFBData()
 
 	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
