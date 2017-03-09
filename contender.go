@@ -100,8 +100,6 @@ func CreateContenderTable(db *sql.DB) error {
 		UpdatedAt DATETIME
 	);
 	`
-
-	// don't care about this result
 	_, err := db.Exec(q)
 	if err != nil {
 		log.Println("Failed to CREATE contenders table")
@@ -173,9 +171,6 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
 		return nil, err
 	default:
-		log.Printf("Username is %s\n", name)
-		log.Printf("totalPosts is %s\n", totalPosts)
-
 		var posts []string
 		json.Unmarshal([]byte(totalPosts), &posts)
 

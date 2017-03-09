@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	fb "github.com/huandu/facebook"
 	"log"
@@ -12,9 +13,14 @@ type Post struct {
 	Id         string `facebook:",required"`
 	PostedDate string
 	Author     string
-	TotalLikes int
+	Likes      []Like
 	CreatedAt  *time.Time
 	UpdatedAt  *time.Time
+}
+
+type Like struct {
+	Id   string
+	Name string
 }
 
 func (p *Post) DBTableName() string {
@@ -31,13 +37,18 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		Id,
 		PostedDate,
 		Author,
-		TotalLikes,
+		Likes,
 		CreatedAt,
 		UpdatedAt
 	) values (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
 
-	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, p.TotalLikes, p.CreatedAt, p.UpdatedAt)
+	likes, err := json.Marshal(p.Likes)
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes, p.CreatedAt, p.UpdatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -51,7 +62,7 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 }
 
 // asumes never goesdown?
-func (p *Post) updateTotalLikes(n int) {
+func (p *Post) updateLikes(n int) {
 
 }
 
@@ -62,13 +73,11 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 		Id TEXT NOT NULL,
 		PostedDate DATETIME,
 		Author TEXT,
-		TotalLikes INT,
+		Likes BLOB,
 		CreatedAt DATETIME,
 		UpdatedAt DATETIME
 	);
 	`
-
-	// don't care about this result
 	_, err := db.Exec(q)
 	if err != nil {
 		log.Println("Failed to CREATE posts table")
@@ -94,23 +103,24 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 		// todo: should this check if post already exists?
 		_, err := fbPosts[i].CreatePost(tx)
 		if err != nil {
+			log.Printf("Failed to create post")
 			return err
 		}
 
 		// for each like, give a likes given
-		log.Printf("Updating likes on %s's post\n", fbPosts[i].Author)
-		log.Printf("likes %s\n", fbPosts[i].TotalLikes)
-		for j := 0; j < fbPosts[i].TotalLikes; j++ {
-			c, err := GetContenderByUsername(GetDBHandle(), fbPosts[i].Author)
+		db := GetDBHandle()
+		for j := 0; j < len(fbPosts[i].Likes); j++ {
+			c, err := GetContenderByUsername(db, fbPosts[i].Likes[j].Name)
 			if err != nil {
+				log.Println("Failed to get contender", fbPosts[i].Likes[j].Name)
 				return err
 			}
 			err = c.updateTotalLikesGiven(tx)
 			if err != nil {
+				log.Println("Failed to update totalLikesGiven for contender", fbPosts[i].Likes[j].Name)
 				return err
 			}
 		}
-		log.Printf("updated %s's posts likes\n\n", fbPosts[i].Author)
 	}
 
 	// Commit the transaction.
@@ -147,15 +157,15 @@ func GetFBPosts(startDate time.Time, session *fb.Session) ([]Post, error) {
 Loop:
 	for {
 		results := paging.Data()
-		fmt.Println("Posts page ", count)
+		log.Println("Posts page ", count)
 
 		// 25 posts per page, load data into a Post struct
 		for i := 0; i < len(results); i++ {
 			var p Post
 			facebookPost := fb.Result(results[i]) // cast the var
-			p.PostedDate = facebookPost.Get("created_time").(string)
 
 			// stop when post reaches startDate
+			p.PostedDate = facebookPost.Get("created_time").(string)
 			t, err := time.Parse(GoTimeLayout, p.PostedDate)
 			if err != nil {
 				log.Fatal("Failed to parse post's postedDate")
@@ -170,13 +180,23 @@ Loop:
 			p.Author = facebookPost.Get("from.name").(string)
 			p.PostedDate = t.String()
 
+			// unload Likes data into a Like struct
 			if facebookPost.Get("likes.data") != nil {
+				var likes []Like
 				numLikes := facebookPost.Get("likes.data").([]interface{})
-				p.TotalLikes = len(numLikes)
+				for j := 0; j < len(numLikes); j++ {
+					var l Like
+					l.Id = numLikes[j].(map[string]interface{})["id"].(string)
+					l.Name = numLikes[j].(map[string]interface{})["name"].(string)
+					likes = append(likes, l)
+				}
+				p.Likes = likes
+
 			} else {
-				p.TotalLikes = 0
+				p.Likes = nil
 			}
 
+			// save the new Post
 			posts = append(posts, p)
 		}
 
