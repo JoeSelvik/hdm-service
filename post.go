@@ -13,14 +13,18 @@ type Post struct {
 	Id         string `facebook:",required"`
 	PostedDate string
 	Author     string
-	Likes      []Like
+	Likes      Likes
 	CreatedAt  *time.Time
 	UpdatedAt  *time.Time
 }
 
 type Like struct {
-	Id   string
-	Name string
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type Likes struct {
+	Data []Like `json:"data"`
 }
 
 func (p *Post) DBTableName() string {
@@ -42,11 +46,12 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		UpdatedAt
 	) values (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
-
+	// fmt.Printf("p.Likes: %v\n", p.Likes)
 	likes, err := json.Marshal(p.Likes)
 	if err != nil {
 		return 0, err
 	}
+	// fmt.Printf("likes: %v\n\n", likes)
 
 	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes, p.CreatedAt, p.UpdatedAt)
 	if err != nil {
@@ -117,7 +122,7 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	return nil
 }
 
-func GetHDMPosts(db *sql.DB) ([]Post, error) {
+func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 	rows, err := db.Query("SELECT * FROM posts")
 	if err != nil {
 		log.Fatal(err)
@@ -125,7 +130,7 @@ func GetHDMPosts(db *sql.DB) ([]Post, error) {
 	}
 	defer rows.Close()
 
-	var posts []Post
+	posts := make(map[string]Post)
 
 	for rows.Next() {
 		var id string
@@ -141,8 +146,8 @@ func GetHDMPosts(db *sql.DB) ([]Post, error) {
 			return nil, err
 		}
 
-		var likes []Like
-		json.Unmarshal([]byte(strLikes), likes)
+		likes := Likes{}
+		json.Unmarshal([]byte(strLikes), &likes)
 
 		p := Post{
 			Id:         id,
@@ -152,7 +157,7 @@ func GetHDMPosts(db *sql.DB) ([]Post, error) {
 			CreatedAt:  createdAt,
 			UpdatedAt:  updatedAt,
 		}
-		posts = append(posts, p)
+		posts[p.Id] = p
 	}
 
 	err = rows.Err()
@@ -213,18 +218,18 @@ Loop:
 
 			// unload Likes data into a Like struct
 			if facebookPost.Get("likes.data") != nil {
-				var likes []Like
+				var like_list []Like
 				numLikes := facebookPost.Get("likes.data").([]interface{})
 				for j := 0; j < len(numLikes); j++ {
 					var l Like
 					l.Id = numLikes[j].(map[string]interface{})["id"].(string)
 					l.Name = numLikes[j].(map[string]interface{})["name"].(string)
-					likes = append(likes, l)
+					like_list = append(like_list, l)
 				}
-				p.Likes = likes
+				p.Likes = Likes{Data: like_list}
 
 			} else {
-				p.Likes = nil
+				p.Likes = Likes{Data: nil}
 			}
 
 			// save the new Post

@@ -16,8 +16,8 @@ type Contender struct {
 	TotalLikesReceived int
 	AvgLikesPerPost    int
 	TotalLikesGiven    int
-	CreatedAt          *time.Time
-	UpdatedAt          *time.Time
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 func (c *Contender) DBTableName() string {
@@ -58,7 +58,27 @@ func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 		return 0, err
 	}
 
-	log.Printf("added contender %s", c.Name)
+	return id, nil
+}
+
+func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
+	posts, err := json.Marshal(c.TotalPosts)
+	if err != nil {
+		return 0, err
+	}
+
+	q := `UPDATE contenders SET TotalPosts = ?, TotalLikesReceived = ?, AvgLikesPerPost = ?, TotalLikesGiven = ?, UpdatedAt = CURRENT_TIMESTAMP WHERE Id = ?`
+	result, err := tx.Exec(q, posts, c.TotalLikesReceived, c.AvgLikesPerPost, c.TotalLikesGiven, c.Id)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to update %s's row: %v", c.Name, err))
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
 	return id, nil
 }
 
@@ -76,12 +96,19 @@ func (c *Contender) updateTotalPosts(id string, tx *sql.Tx) {
 		log.Fatal(fmt.Sprintf("Failed to get %s's TotalPosts's: %v", c.Name, err))
 	}
 
-	c.TotalPosts = append(updatedContender.TotalPosts, id)
+	fmt.Printf("original contender posts: %+v\n", c.TotalPosts)
+	fmt.Printf("updated contender: %+v\n", updatedContender.TotalPosts)
+	newPosts := append(updatedContender.TotalPosts, id)
+	fmt.Printf("new posts: %v\n\n", newPosts)
+
+	posts, err := json.Marshal(newPosts)
+
+	// c.TotalPosts = append(updatedContender.TotalPosts, id)
 
 	// place back in db
 	// todo: update updated time
-	q := `UPDATE contenders SET TotalPosts = TotalPosts WHERE Name=?;`
-	_, err = tx.Exec(q, c.Name)
+	q := `UPDATE contenders SET TotalPosts = ? WHERE Name=?;`
+	_, err = tx.Exec(q, posts, c.Name)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven: %v", c.Name, err))
 	}
@@ -160,24 +187,53 @@ func UpdateHDMContenderDependentData() {
 	posts, err := GetHDMPosts(db)
 	handle_error("Could not get posts", err, true)
 
+	contenders := make(map[string]Contender)
+
+	// key, value: Post.Id, Post
+	for _, p := range posts {
+
+		// Grab contender from db if it has not been updated yet
+		var poster *Contender
+		if val, ok := contenders[p.Author]; ok {
+			poster = &val
+		} else {
+			poster, _ = GetContenderByUsername(db, p.Author)
+		}
+
+		poster.TotalPosts = append(poster.TotalPosts, p.Id)
+		likesReceived := 0
+		for i := 0; i < len(poster.TotalPosts); i++ {
+			likesReceived = len(posts[poster.TotalPosts[i]].Likes.Data) + likesReceived
+		}
+
+		poster.TotalLikesReceived = likesReceived
+		poster.AvgLikesPerPost = poster.TotalLikesReceived / len(poster.TotalPosts)
+
+		// for each like, give a likes given
+		for j := 0; j < len(p.Likes.Data); j++ {
+			var liker *Contender
+			if val, ok := contenders[p.Likes.Data[j].Name]; ok {
+				liker = &val
+			} else {
+				liker, _ = GetContenderByUsername(db, p.Likes.Data[j].Name)
+			}
+			liker.TotalLikesGiven++
+			contenders[liker.Name] = *liker
+		}
+
+		contenders[poster.Name] = *poster
+	}
+
 	tx, err := db.Begin()
 	handle_error("Failed to BEGIN txn", err, true)
 	defer tx.Rollback()
 
-	for i := 0; i < len(posts); i++ {
-		c, _ := GetContenderByUsername(db, posts[i].Author)
-		log.Printf("Updating %s's post", c.Name)
-
-		// c.updateTotalPosts(posts[i].Id, tx)
-		// c.updateIndependentData()
-
-		// for each like, give a likes given
-		log.Printf("likes %v", posts[i].Likes)
-		for j := 0; j < len(posts[i].Likes); j++ {
-			log.Printf("%s liked it", posts[i].Likes[j].Name)
-			err = c.updateTotalLikesGiven(tx)
-			msg := fmt.Sprintf("Failed to update totalLikesGiven for contender %s", posts[i].Likes[j].Name)
-			handle_error(msg, err, true)
+	// Update every contender in db that was updated
+	// key, value: Contender.Id, Contender
+	for _, c := range contenders {
+		_, err := c.UpdateContender(tx)
+		if err != nil {
+			handle_error("Could not update contender", err, true)
 		}
 	}
 
@@ -204,11 +260,48 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	var totalLikesReceived int
 	var avgLikesPerPost int
 	var totalLikesGiven int
-	var createdAt *time.Time
-	var updatedAt *time.Time
+	var createdAt time.Time
+	var updatedAt time.Time
 
 	// todo: is this bad overwritting name?
 	err := db.QueryRow(q, name).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Printf("No user with that Name.")
+		return nil, err
+	case err != nil:
+		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
+		return nil, err
+	default:
+		var posts []string
+		json.Unmarshal([]byte(totalPosts), &posts)
+
+		c := &Contender{
+			Id:                 id,
+			Name:               name,
+			TotalPosts:         posts,
+			TotalLikesReceived: totalLikesReceived,
+			AvgLikesPerPost:    avgLikesPerPost,
+			TotalLikesGiven:    totalLikesGiven,
+			CreatedAt:          createdAt,
+			UpdatedAt:          updatedAt,
+		}
+		return c, nil
+	}
+}
+
+func GetContenderById(db *sql.DB, id string) (*Contender, error) {
+	q := "SELECT * FROM contenders WHERE id = ?"
+	var name string
+	var totalPosts string // sqlite blob later to be unmarshalled
+	var totalLikesReceived int
+	var avgLikesPerPost int
+	var totalLikesGiven int
+	var createdAt time.Time
+	var updatedAt time.Time
+
+	// todo: is this bad overwritting name?
+	err := db.QueryRow(q, id).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No user with that ID.")
@@ -252,8 +345,8 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 		var totalLikesReceived int
 		var avgLikesPerPost int
 		var totalLikesGiven int
-		var createdAt *time.Time
-		var updatedAt *time.Time
+		var createdAt time.Time
+		var updatedAt time.Time
 
 		err := rows.Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
 		if err != nil {
@@ -261,8 +354,11 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 			return nil, err
 		}
 
+		fmt.Printf("totalPosts: %s\n", totalPosts)
+
 		var posts []string
 		json.Unmarshal([]byte(totalPosts), &posts)
+		fmt.Printf("posts: %s\n", posts)
 
 		c := Contender{
 			Id:                 id,
