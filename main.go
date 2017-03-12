@@ -178,10 +178,15 @@ func getFBData() {
 }
 
 func main() {
-	setupDatabase()
-	// db := GetDBHandle()
-	// GetHDMPosts(db)
-	UpdateHDMContenderDependentData()
+	// setupDatabase()
+	// UpdateHDMContenderDependentData()
+
+	db := GetDBHandle()
+	contenders, _ := GetHDMContenders(db)
+
+	for k, c := range contenders {
+		fmt.Printf("%s: %v\n", k, c)
+	}
 
 	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	// http.ListenAndServe(":8080", nil)

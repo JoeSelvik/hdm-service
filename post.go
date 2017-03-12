@@ -46,18 +46,15 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		UpdatedAt
 	) values (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
-	// fmt.Printf("p.Likes: %v\n", p.Likes)
 	likes, err := json.Marshal(p.Likes)
 	if err != nil {
 		return 0, err
 	}
-	// fmt.Printf("likes: %v\n\n", likes)
 
 	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes, p.CreatedAt, p.UpdatedAt)
 	if err != nil {
 		return 0, err
 	}
-
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
@@ -66,12 +63,15 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 	return id, nil
 }
 
-// asumes never goesdown?
-func (p *Post) updateLikes(n int) {
+// // todo: if needed?
+// func (p *Post) UpdatePost(tx *sql.Tx) (int64, error) {
 
-}
+// }
 
-// CreatePostsTable creates the posts table if it does not exist
+// CreatePostsTable creates the posts table
+//
+// todo: should this check if post already exists and table
+// and only print new entries?
 func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	q := `
 	CREATE TABLE IF NOT EXISTS posts(
@@ -103,9 +103,8 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
+	// Create each Post in DB
 	for i := 0; i < len(fbPosts); i++ {
-		// Create each Post in DB
-		// todo: should this check if post already exists?
 		_, err := fbPosts[i].CreatePost(tx)
 		if err != nil {
 			log.Printf("Failed to create post")
@@ -122,6 +121,7 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	return nil
 }
 
+// GetHDMPosts returns a map of each Post in the DB indexed by Id
 func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 	rows, err := db.Query("SELECT * FROM posts")
 	if err != nil {
@@ -168,6 +168,7 @@ func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 	return posts, nil
 }
 
+// GetFBPosts returns a slice of Posts from the Group feed up to a given date.
 func GetFBPosts(startDate time.Time, session *fb.Session) ([]Post, error) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%s/feed", GetGroupID()), fb.Params{

@@ -42,7 +42,6 @@ func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 		UpdatedAt
 	) values (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
-
 	posts, err := json.Marshal(c.TotalPosts)
 	if err != nil {
 		return 0, err
@@ -52,7 +51,6 @@ func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
@@ -82,56 +80,10 @@ func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
 	return id, nil
 }
 
-func (c *Contender) updateIndependentData() {
-
-}
-
-func (c *Contender) updateTotalPosts(id string, tx *sql.Tx) {
-	// get up to dat contender fromdb for posts data
-	db := GetDBHandle()
-
-	// Get current posts for contender from DB
-	updatedContender, err := GetContenderByUsername(db, c.Name)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to get %s's TotalPosts's: %v", c.Name, err))
-	}
-
-	fmt.Printf("original contender posts: %+v\n", c.TotalPosts)
-	fmt.Printf("updated contender: %+v\n", updatedContender.TotalPosts)
-	newPosts := append(updatedContender.TotalPosts, id)
-	fmt.Printf("new posts: %v\n\n", newPosts)
-
-	posts, err := json.Marshal(newPosts)
-
-	// c.TotalPosts = append(updatedContender.TotalPosts, id)
-
-	// place back in db
-	// todo: update updated time
-	q := `UPDATE contenders SET TotalPosts = ? WHERE Name=?;`
-	_, err = tx.Exec(q, posts, c.Name)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven: %v", c.Name, err))
-	}
-}
-
-func (c *Contender) updateTotalLikesRx() {
-
-}
-
-// only incraments by one
-func (c *Contender) updateTotalLikesGiven(tx *sql.Tx) error {
-	c.TotalLikesGiven++
-	// todo: update updated time
-	q := `UPDATE contenders SET TotalLikesGiven = TotalLikesGiven + 1 WHERE Name=?;`
-	_, err := tx.Exec(q, c.Name)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to increment %s's TotalLikesGiven: %v", c.Name, err))
-		return err
-	}
-	return nil
-}
-
-// CreateContenderTable creates the contenders table if it does not exist
+// CreateContenderTable creates the contenders table
+//
+// todo: should this check if contender already exists and table
+// and only print new entries?
 func CreateContenderTable(db *sql.DB) error {
 	q := `
 	CREATE TABLE IF NOT EXISTS contenders(
@@ -165,8 +117,8 @@ func CreateContenderTable(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
+	// Create each Contender in DB
 	for i := 0; i < len(fbContenders); i++ {
-		// should this check if contender already exists?
 		_, err := fbContenders[i].CreateContender(tx)
 		if err != nil {
 			return err
@@ -182,11 +134,18 @@ func CreateContenderTable(db *sql.DB) error {
 	return nil
 }
 
+// UpdateHDMContenderDependentData creates a map of Contenders to update
+//
+// For each Post it updates the posting Contender's TotalPosts, TotalLikesReceived,
+// and AvgLikesPerPost. Then for each like on the Post it updates those
+// Contender's TotalLikesGiven. A transaction then updates each Contender
+// in the map to be updated.
 func UpdateHDMContenderDependentData() {
 	db := GetDBHandle()
 	posts, err := GetHDMPosts(db)
 	handle_error("Could not get posts", err, true)
 
+	// Initialize a map of Contenders to be updated
 	contenders := make(map[string]Contender)
 
 	// key, value: Post.Id, Post
@@ -200,16 +159,17 @@ func UpdateHDMContenderDependentData() {
 			poster, _ = GetContenderByUsername(db, p.Author)
 		}
 
+		// Update Contender's data fields with Post data
 		poster.TotalPosts = append(poster.TotalPosts, p.Id)
 		likesReceived := 0
 		for i := 0; i < len(poster.TotalPosts); i++ {
 			likesReceived = len(posts[poster.TotalPosts[i]].Likes.Data) + likesReceived
 		}
-
 		poster.TotalLikesReceived = likesReceived
 		poster.AvgLikesPerPost = poster.TotalLikesReceived / len(poster.TotalPosts)
+		contenders[poster.Name] = *poster
 
-		// for each like, give a likes given
+		// For each Post like, give a likes given to the contenders
 		for j := 0; j < len(p.Likes.Data); j++ {
 			var liker *Contender
 			if val, ok := contenders[p.Likes.Data[j].Name]; ok {
@@ -220,15 +180,13 @@ func UpdateHDMContenderDependentData() {
 			liker.TotalLikesGiven++
 			contenders[liker.Name] = *liker
 		}
-
-		contenders[poster.Name] = *poster
 	}
 
+	// Update every Contender in db that was effected by Posts
 	tx, err := db.Begin()
 	handle_error("Failed to BEGIN txn", err, true)
 	defer tx.Rollback()
 
-	// Update every contender in db that was updated
 	// key, value: Contender.Id, Contender
 	for _, c := range contenders {
 		_, err := c.UpdateContender(tx)
@@ -237,22 +195,12 @@ func UpdateHDMContenderDependentData() {
 		}
 	}
 
-	// Commit the transaction.
 	if err = tx.Commit(); err != nil {
 		log.Println("Failed to COMMIT txn:", err)
 	}
 }
 
-// func UpdateContenderTable() {
-// 	session := GetFBSession()
-// 	db := GetDBHandle()
-// 	fbContenders := GetFBContenders(session)
-// 	contenders := GetHDMContenders(db)
-
-// 	for c
-// }
-
-// todo: should I return *Contender or Contender?
+// GetContenderByUsername returns a pointer to the Contender witht he provided name.
 func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	q := "SELECT * FROM contenders WHERE name = ?"
 	var id string
@@ -290,45 +238,8 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	}
 }
 
-func GetContenderById(db *sql.DB, id string) (*Contender, error) {
-	q := "SELECT * FROM contenders WHERE id = ?"
-	var name string
-	var totalPosts string // sqlite blob later to be unmarshalled
-	var totalLikesReceived int
-	var avgLikesPerPost int
-	var totalLikesGiven int
-	var createdAt time.Time
-	var updatedAt time.Time
-
-	// todo: is this bad overwritting name?
-	err := db.QueryRow(q, id).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
-	switch {
-	case err == sql.ErrNoRows:
-		log.Printf("No user with that ID.")
-		return nil, err
-	case err != nil:
-		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
-		return nil, err
-	default:
-		var posts []string
-		json.Unmarshal([]byte(totalPosts), &posts)
-
-		c := &Contender{
-			Id:                 id,
-			Name:               name,
-			TotalPosts:         posts,
-			TotalLikesReceived: totalLikesReceived,
-			AvgLikesPerPost:    avgLikesPerPost,
-			TotalLikesGiven:    totalLikesGiven,
-			CreatedAt:          createdAt,
-			UpdatedAt:          updatedAt,
-		}
-		return c, nil
-	}
-}
-
-// GetHDMContenders returns a slice of Contenders from the contenders table
-func GetHDMContenders(db *sql.DB) ([]Contender, error) {
+// GetHDMContenders returns a map of each Contender in the DB indexed by Id
+func GetHDMContenders(db *sql.DB) (map[string]Contender, error) {
 	rows, err := db.Query("SELECT * FROM contenders")
 	if err != nil {
 		log.Fatal(err)
@@ -336,7 +247,7 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 	}
 	defer rows.Close()
 
-	var contenders []Contender
+	contenders := make(map[string]Contender)
 
 	for rows.Next() {
 		var id string
@@ -354,11 +265,8 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 			return nil, err
 		}
 
-		fmt.Printf("totalPosts: %s\n", totalPosts)
-
 		var posts []string
 		json.Unmarshal([]byte(totalPosts), &posts)
-		fmt.Printf("posts: %s\n", posts)
 
 		c := Contender{
 			Id:                 id,
@@ -370,7 +278,7 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 			CreatedAt:          createdAt,
 			UpdatedAt:          updatedAt,
 		}
-		contenders = append(contenders, c)
+		contenders[c.Id] = c
 	}
 
 	err = rows.Err()
@@ -378,10 +286,11 @@ func GetHDMContenders(db *sql.DB) ([]Contender, error) {
 		log.Fatal(err)
 		return nil, err
 	}
+
 	return contenders, nil
 }
 
-// Returns a slice of Contenders for a given *Session from a FB group
+// GetFBContenders returns a slice of Contenders for a given *Session from a FB group
 func GetFBContenders(session *fb.Session) ([]Contender, error) {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
