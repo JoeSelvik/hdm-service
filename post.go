@@ -14,8 +14,8 @@ type Post struct {
 	PostedDate string
 	Author     string
 	Likes      Likes
-	CreatedAt  *time.Time
-	UpdatedAt  *time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type Like struct {
@@ -51,7 +51,7 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		return 0, err
 	}
 
-	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes, p.CreatedAt, p.UpdatedAt)
+	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes)
 	if err != nil {
 		return 0, err
 	}
@@ -137,8 +137,8 @@ func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 		var postedDate string // todo: should this be a time.Time?
 		var author string
 		var strLikes string // sqlite blob later to be unmarshalled
-		var createdAt *time.Time
-		var updatedAt *time.Time
+		var createdAt time.Time
+		var updatedAt time.Time
 
 		err := rows.Scan(&id, &postedDate, &author, &strLikes, &createdAt, &updatedAt)
 		if err != nil {

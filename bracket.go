@@ -2,43 +2,108 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"log"
+	"time"
 )
 
 type Bracket struct {
-	Teams   [][]interface{} `json:"teams"`
-	Results []interface{}   `json:"results"`
+	Id    int
+	Teams [][]interface{} `json:"teams"`
+	// Teams     []TeamPair    `json:"teams"`
+	Results   []interface{} `json:"results"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-// CreateBracketTable creates the brackets table if it does not exist
-func CreateBracketTable(db *sql.DB) {
-	sql_table := `
-	CREATE TABLE IF NOT EXISTS brackets(
-		Id TEXT NOT NULL,
-		Teams ??,
-		Results ??
-	);
-	`
+// teams := make([][]interface{}, 32)
+// teams[0] = []interface{}{"hank", nil}
+type TeamPair struct {
+	ContenderAName string
+	ContenderBName string
+}
 
-	_, err := db.Exec(sql_table)
-	if err != nil {
-		panic(err)
-	}
+// firstRound := make([][]interface{}, 32)
+// firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
+type Results struct {
 }
 
 func (b *Bracket) DBTableName() string {
 	return "brackets"
 }
 
-// Path will supply the URL extension for a Bracket resource
 func (b *Bracket) Path() string {
 	return "/brackets/"
+}
+
+func (b *Bracket) CreateBracket(tx *sql.Tx) (int64, error) {
+	q := `
+	INSERT INTO brackets (
+		Id,
+		Teams,
+		Results,
+		CreatedAt,
+		UpdatedAt
+	) values (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`
+	teams, err := json.Marshal(b.Teams)
+	if err != nil {
+		return 0, err
+	}
+
+	results, err := json.Marshal(b.Results)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := tx.Exec(q, b.Id, teams, results)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+// CreateBracketTable creates the brackets table if it does not exist
+func CreateBracketTable(db *sql.DB) error {
+	q := `
+	CREATE TABLE IF NOT EXISTS brackets(
+		Id INT NOT NULL,
+		Teams BLOB,
+		Results BLOB,
+		CreatedAt DATETIME,
+		UpdatedAt DATETIME
+	);
+	`
+	_, err := db.Exec(q)
+	if err != nil {
+		log.Println("Failed to CREATE brackets table")
+		return err
+	}
+
+	// teams = GetCreateInitialTeams
+	// reults = CreateInitialResults
+
+	return nil
 }
 
 func (b *Bracket) UpdateResults() {
 
 }
 
-func fullBracket() Bracket {
+// func CreateInitialTeams() []Teams {
+
+// }
+
+func CreateInitialResults() {
+
+}
+
+func fullBracketDemo() Bracket {
 	teams := make([][]interface{}, 32)
 	teams[0] = []interface{}{"hank", nil}
 	teams[1] = []interface{}{"joe", "matt"}
@@ -159,5 +224,6 @@ func fullBracket() Bracket {
 	results[4] = finalFour
 	results[5] = championship
 
-	return Bracket{teams, results}
+	// return Bracket{666, teams, results, time.Now(), time.Now()}
+	return Bracket{}
 }

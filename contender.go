@@ -59,6 +59,7 @@ func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 	return id, nil
 }
 
+// UpdateContender updates the dependent data fields and updatedAt on the contender's db row
 func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
 	posts, err := json.Marshal(c.TotalPosts)
 	if err != nil {

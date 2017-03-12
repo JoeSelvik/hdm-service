@@ -98,11 +98,17 @@ func GetDBHandle() *sql.DB {
 }
 
 func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
-	teams := make([][]string, 4)
-	teams[0] = []string{"joe", "matt"}
-	teams[1] = []string{"tj", "cody"}
-	teams[2] = []string{"george", "jim"}
-	teams[3] = []string{"ted", "tim"}
+	teams := make([][]interface{}, 4)
+	teams[0] = []interface{}{"joe", "matt"}
+	teams[1] = []interface{}{"tj", "cody"}
+	teams[2] = []interface{}{"george", "jim"}
+	teams[3] = []interface{}{"ted", "tim"}
+
+	// teams := make([]TeamPair, 4)
+	// teams[0] = TeamPair{"joe", "matt"}
+	// teams[0] = TeamPair{"jim", "mike"}
+	// teams[0] = TeamPair{"tim", "amy"}
+	// teams[0] = TeamPair{"bob", "alice"}
 
 	firstRound := make([][]interface{}, 4)
 	firstRound[0] = []interface{}{1, 0, "g1"}
@@ -123,8 +129,15 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	results[1] = secondRound
 	results[2] = thirdRound
 
-	// bracket := Bracket{teams, results}
-	bracket := fullBracket()
+	// teamJS, err := json.Marshal(teams)
+	// if err != nil {
+	// 	log.Println("Could not marshal teams")
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
+	// bracket := fullBracketDemo()
 	js, err := json.Marshal(bracket)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -181,13 +194,12 @@ func main() {
 	// setupDatabase()
 	// UpdateHDMContenderDependentData()
 
-	db := GetDBHandle()
-	contenders, _ := GetHDMContenders(db)
+	// db := GetDBHandle()
+	// contenders, _ := GetHDMContenders(db)
+	// for k, c := range contenders {
+	// 	fmt.Printf("%s: %v\n", k, c)
+	// }
 
-	for k, c := range contenders {
-		fmt.Printf("%s: %v\n", k, c)
-	}
-
-	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
-	// http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
+	http.ListenAndServe(":8080", nil)
 }
