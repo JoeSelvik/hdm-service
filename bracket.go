@@ -3,15 +3,20 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 )
 
+type JSBracket struct {
+	Teams   [][]interface{} `json:"teams"`
+	Results []interface{}   `json:"results"`
+}
+
 type Bracket struct {
-	Id    int
-	Teams [][]interface{} `json:"teams"`
-	// Teams     []TeamPair    `json:"teams"`
-	Results   []interface{} `json:"results"`
+	Id        int
+	Teams     []TeamPair       `json:"teams"`
+	Results   SixtyFourResults `json:"results"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -23,9 +28,18 @@ type TeamPair struct {
 	ContenderBName string
 }
 
+// results := make([]interface{}, 3)
 // firstRound := make([][]interface{}, 32)
 // firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
-type Results struct {
+// results[0] = firstRound
+// ...
+type SixtyFourResults struct {
+	FirstRound  [][]interface{}
+	SecondRound [][]interface{}
+	ThirdRound  [][]interface{}
+	FourthRound [][]interface{}
+	FifthRound  [][]interface{}
+	SixthRound  [][]interface{}
 }
 
 func (b *Bracket) DBTableName() string {
@@ -34,6 +48,10 @@ func (b *Bracket) DBTableName() string {
 
 func (b *Bracket) Path() string {
 	return "/brackets/"
+}
+
+func (t *TeamPair) serialize() []interface{} {
+	return []interface{}{t.ContenderAName, t.ContenderBName}
 }
 
 func (b *Bracket) CreateBracket(tx *sql.Tx) (int64, error) {
@@ -101,6 +119,36 @@ func (b *Bracket) UpdateResults() {
 
 func CreateInitialResults() {
 
+}
+
+func GetBracket(db *sql.DB, x int) (*Bracket, error) {
+	var id int
+	var strTeams string
+	var strResults string
+	var createdAt time.Time
+	var updatedAt time.Time
+
+	err := db.QueryRow("SELECT * FROM brackets WHERE Id=?", x).Scan(&id, &strTeams, &strResults, &createdAt, &updatedAt)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to scan bracket from table: %v", err))
+		return nil, err
+	}
+
+	teams := []TeamPair{}
+	json.Unmarshal([]byte(strTeams), &teams)
+
+	// results := Results{}
+	// json.Unmarshal([]byte(strResults), &results)
+
+	b := Bracket{
+		Id:        id,
+		Teams:     teams,
+		Results:   nil,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	}
+
+	return &b, nil
 }
 
 func fullBracketDemo() Bracket {

@@ -98,17 +98,11 @@ func GetDBHandle() *sql.DB {
 }
 
 func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
-	teams := make([][]interface{}, 4)
-	teams[0] = []interface{}{"joe", "matt"}
-	teams[1] = []interface{}{"tj", "cody"}
-	teams[2] = []interface{}{"george", "jim"}
-	teams[3] = []interface{}{"ted", "tim"}
-
-	// teams := make([]TeamPair, 4)
-	// teams[0] = TeamPair{"joe", "matt"}
-	// teams[0] = TeamPair{"jim", "mike"}
-	// teams[0] = TeamPair{"tim", "amy"}
-	// teams[0] = TeamPair{"bob", "alice"}
+	teams := make([]TeamPair, 4)
+	teams[0] = TeamPair{"joe", "matt"}
+	teams[1] = TeamPair{"jim", "mike"}
+	teams[2] = TeamPair{"tim", "amy"}
+	teams[3] = TeamPair{"tim", "amy"}
 
 	firstRound := make([][]interface{}, 4)
 	firstRound[0] = []interface{}{1, 0, "g1"}
@@ -124,10 +118,15 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	thirdRound[0] = []interface{}{nil, nil, "g7"}
 	thirdRound[1] = []interface{}{nil, nil, "g8"}
 
-	results := make([]interface{}, 3)
-	results[0] = firstRound
-	results[1] = secondRound
-	results[2] = thirdRound
+	// results := make([]interface{}, 3)
+	// results[0] = firstRound
+	// results[1] = secondRound
+	// results[2] = thirdRound
+
+	results := SixtyFourResults{}
+	results.FirstRound = firstRound
+	results.SecondRound = secondRound
+	results.ThirdRound = thirdRound
 
 	// teamJS, err := json.Marshal(teams)
 	// if err != nil {
@@ -137,8 +136,25 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
-	// bracket := fullBracketDemo()
-	js, err := json.Marshal(bracket)
+
+	// serialize a HDMBracket
+	var bracketJS JSBracket
+
+	teamJS := make([][]interface{}, 4)
+	for i := 0; i < len(bracket.Teams); i++ {
+		t := TeamPair{bracket.Teams[i].ContenderAName, bracket.Teams[i].ContenderBName}
+		teamJS[i] = t.serialize()
+	}
+	bracketJS.Teams = teamJS
+
+	resultJS := make([]interface{}, 3)
+	for i := 0; i < len(bracket.Results); i++ {
+		resultJS[i] = results.FirstRound
+	}
+
+	bracketJS.Results = resultJS
+
+	js, err := json.Marshal(bracketJS)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
