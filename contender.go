@@ -239,8 +239,8 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	}
 }
 
-// GetHDMContenders returns a map of each Contender in the DB indexed by Id
-func GetHDMContenders(db *sql.DB) (map[string]Contender, error) {
+// GetHDMContenders returns a map of pointers to each Contender in the DB indexed by Id
+func GetHDMContenders(db *sql.DB) (map[string]*Contender, error) {
 	rows, err := db.Query("SELECT * FROM contenders")
 	if err != nil {
 		log.Fatal(err)
@@ -248,7 +248,7 @@ func GetHDMContenders(db *sql.DB) (map[string]Contender, error) {
 	}
 	defer rows.Close()
 
-	contenders := make(map[string]Contender)
+	contenders := make(map[string]*Contender)
 
 	for rows.Next() {
 		var id string
@@ -279,7 +279,7 @@ func GetHDMContenders(db *sql.DB) (map[string]Contender, error) {
 			CreatedAt:          createdAt,
 			UpdatedAt:          updatedAt,
 		}
-		contenders[c.Id] = c
+		contenders[c.Id] = &c
 	}
 
 	err = rows.Err()

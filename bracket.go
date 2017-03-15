@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -29,8 +30,7 @@ type TeamPair struct {
 }
 
 // results := make([]interface{}, 3)
-// firstRound := make([][]interface{}, 32)
-// firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
+// ... create round, see below
 // results[0] = firstRound
 // ...
 type SixtyFourResults struct {
@@ -42,6 +42,11 @@ type SixtyFourResults struct {
 	SixthRound  [][]interface{}
 }
 
+// firstRound := make([][]interface{}, 4)
+// firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
+type Round struct {
+}
+
 func (b *Bracket) DBTableName() string {
 	return "brackets"
 }
@@ -50,6 +55,7 @@ func (b *Bracket) Path() string {
 	return "/brackets/"
 }
 
+// Returns the TeamPair struct in the format of an arrary of names
 func (t *TeamPair) serialize() []interface{} {
 	return []interface{}{t.ContenderAName, t.ContenderBName}
 }
@@ -113,9 +119,40 @@ func (b *Bracket) UpdateResults() {
 
 }
 
-// func CreateInitialTeams() []Teams {
+// Sort interface, http://stackoverflow.com/questions/19946992/sorting-a-map-of-structs-golang
+type contenderSlice []*Contender
 
-// }
+// Len is part of sort.Interface.
+func (c contenderSlice) Len() int {
+	return len(c)
+}
+
+// Swap is part of sort.Interface.
+func (c contenderSlice) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+// Less is part of sort.Interface. Use AvgLikesPerPost as the value to sort by
+func (c contenderSlice) Less(i, j int) bool {
+	return c[i].AvgLikesPerPost < c[j].AvgLikesPerPost
+}
+
+func CreateInitialTeams() {
+	db := GetDBHandle()
+	contenders, _ := GetHDMContenders(db)
+
+	sortedContenders := make(contenderSlice, 0, len(contenders))
+	for _, c := range contenders {
+		sortedContenders = append(sortedContenders, c)
+	}
+	sort.Sort(sortedContenders)
+
+	for i, c := range sortedContenders {
+		fmt.Println(i, c)
+	}
+
+	// return []Teams{}
+}
 
 func CreateInitialResults() {
 
@@ -143,7 +180,7 @@ func GetBracket(db *sql.DB, x int) (*Bracket, error) {
 	b := Bracket{
 		Id:        id,
 		Teams:     teams,
-		Results:   nil,
+		Results:   SixtyFourResults{},
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	}

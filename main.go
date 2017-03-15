@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAIerS1O2e0e91FEbUGIh5R4wXQw1UdCZBtRsdCeyECqHSFy87ZA56RRnn7ROiYZC5Sf4bY4LRTjIXZAZBgDOczbqZBqvcCrCoGrWWO0wEarmSjwYjvQIpuvn86oZAFhWhTFdJJrZAASY9Oiug2Q7pFpEVNgdPdd3WSlMXb4ZB2rF4"
+	AccessToken     = "EAACEdEose0cBAG2KEMjqBOHwkVFw1eXZAx9tIxbuxCD4g9S0u726wnO7mi8ZCBDQzeR6hYYLcVCHvjTJZAcwyVHZA1JfEC4kiduIa4xWRclZBouZCJYjBQo9aWqvfvKHHZBum8DfvZAmaYNvScW2uLWhEWbU14rGmY7HTkNpneS6iSd7nKnBJp38UQwAlsr1ZA9kZD"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -98,12 +98,14 @@ func GetDBHandle() *sql.DB {
 }
 
 func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
+	// Teams
 	teams := make([]TeamPair, 4)
 	teams[0] = TeamPair{"joe", "matt"}
 	teams[1] = TeamPair{"jim", "mike"}
 	teams[2] = TeamPair{"tim", "amy"}
 	teams[3] = TeamPair{"tim", "amy"}
 
+	// Each round of results
 	firstRound := make([][]interface{}, 4)
 	firstRound[0] = []interface{}{1, 0, "g1"}
 	firstRound[1] = []interface{}{nil, nil, "g2"}
@@ -118,28 +120,19 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	thirdRound[0] = []interface{}{nil, nil, "g7"}
 	thirdRound[1] = []interface{}{nil, nil, "g8"}
 
-	// results := make([]interface{}, 3)
-	// results[0] = firstRound
-	// results[1] = secondRound
-	// results[2] = thirdRound
-
+	// Total results
 	results := SixtyFourResults{}
 	results.FirstRound = firstRound
 	results.SecondRound = secondRound
 	results.ThirdRound = thirdRound
 
-	// teamJS, err := json.Marshal(teams)
-	// if err != nil {
-	// 	log.Println("Could not marshal teams")
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
 	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
 
-	// serialize a HDMBracket
+	// Serialize a Bracket so jsQuery can understand it
 	var bracketJS JSBracket
 
+	// Teams needs to be a list of arrays
+	// [["joe","matt"], ["jim","mike"]]
 	teamJS := make([][]interface{}, 4)
 	for i := 0; i < len(bracket.Teams); i++ {
 		t := TeamPair{bracket.Teams[i].ContenderAName, bracket.Teams[i].ContenderBName}
@@ -147,11 +140,21 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	bracketJS.Teams = teamJS
 
+	// Results is a multi-dimension list
+	// first list contains a list of main and a list of consolation results
+	// winner list contains a list for each round
+	// each round contains a list of each game
+	// [
+	// 	[ // main
+	// 		[[1,0,"g1"],[null,null,"g2"],[null,null,"g3"],[null,null,"g4"]],  // round 1
+	// 		[[null,null,"g5"],[null,null,"g6"]],  // round 2
+	// 		[[null,null,"g7"],[null,null,"g8"]]  // round 3
+	// 	]
+	// ] // no consolation
 	resultJS := make([]interface{}, 3)
-	for i := 0; i < len(bracket.Results); i++ {
-		resultJS[i] = results.FirstRound
-	}
-
+	resultJS[0] = results.FirstRound
+	resultJS[1] = results.SecondRound
+	resultJS[2] = results.ThirdRound
 	bracketJS.Results = resultJS
 
 	js, err := json.Marshal(bracketJS)
@@ -215,6 +218,8 @@ func main() {
 	// for k, c := range contenders {
 	// 	fmt.Printf("%s: %v\n", k, c)
 	// }
+
+	CreateInitialTeams()
 
 	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	http.ListenAndServe(":8080", nil)
