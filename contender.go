@@ -28,6 +28,24 @@ func (c *Contender) Path() string {
 	return "/contenders/"
 }
 
+// Sort interface, http://stackoverflow.com/questions/19946992/sorting-a-map-of-structs-golang
+type contenderSlice []*Contender
+
+// Len is part of sort.Interface.
+func (c contenderSlice) Len() int {
+	return len(c)
+}
+
+// Swap is part of sort.Interface.
+func (c contenderSlice) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+// Less is part of sort.Interface. Use AvgLikesPerPost as the value to sort by
+func (c contenderSlice) Less(i, j int) bool {
+	return c[i].AvgLikesPerPost > c[j].AvgLikesPerPost
+}
+
 // CreateContender places the Contender into the contenders table
 func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
 	q := `

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"sort"
 	"time"
 )
@@ -93,7 +94,7 @@ func (b *Bracket) CreateBracket(tx *sql.Tx) (int64, error) {
 }
 
 // CreateBracketTable creates the brackets table if it does not exist
-func CreateBracketTable(db *sql.DB) error {
+func CreateBracketsTable(db *sql.DB) error {
 	q := `
 	CREATE TABLE IF NOT EXISTS brackets(
 		Id INT NOT NULL,
@@ -109,32 +110,29 @@ func CreateBracketTable(db *sql.DB) error {
 		return err
 	}
 
+	tx, err := db.Begin()
+	if err != nil {
+		log.Println("Failed to BEGIN txn:", err)
+		return err
+	}
+	defer tx.Rollback()
+
 	// teams = GetCreateInitialTeams
 	// reults = CreateInitialResults
+	bracket := CreateSampleBracket()
+	_, _ = bracket.CreateBracket(tx)
+
+	// Commit the transaction.
+	if err = tx.Commit(); err != nil {
+		log.Println("Failed to COMMIT txn:", err)
+		return err
+	}
 
 	return nil
 }
 
 func (b *Bracket) UpdateResults() {
 
-}
-
-// Sort interface, http://stackoverflow.com/questions/19946992/sorting-a-map-of-structs-golang
-type contenderSlice []*Contender
-
-// Len is part of sort.Interface.
-func (c contenderSlice) Len() int {
-	return len(c)
-}
-
-// Swap is part of sort.Interface.
-func (c contenderSlice) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
-}
-
-// Less is part of sort.Interface. Use AvgLikesPerPost as the value to sort by
-func (c contenderSlice) Less(i, j int) bool {
-	return c[i].AvgLikesPerPost < c[j].AvgLikesPerPost
 }
 
 func CreateInitialTeams() {
@@ -171,13 +169,27 @@ func GetBracket(db *sql.DB, x int) (*Bracket, error) {
 		return nil, err
 	}
 
+	log.Println("strTeams: ", strTeams)
+	log.Println("strResults: ", strResults)
+
 	teams := []TeamPair{}
 	json.Unmarshal([]byte(strTeams), &teams)
 
-	// results := Results{}
-	// json.Unmarshal([]byte(strResults), &results)
+	results := SixtyFourResults{}
+	json.Unmarshal([]byte(strResults), &results)
 
-	b := Bracket{
+	var round string
+	// for i := 0; i < len(results); i++ {
+	// 	json.Unmarshal([]byte(results[i]), &round)
+	// 	results.FirstRound = round
+	// }
+	json.Unmarshal([]byte(results.FirstRound), &round)
+	results.FirstRound = round
+
+	log.Println("teams: ", teams)
+	log.Println("results: ", results)
+
+	bracket := Bracket{
 		Id:        id,
 		Teams:     teams,
 		Results:   SixtyFourResults{},
@@ -185,7 +197,16 @@ func GetBracket(db *sql.DB, x int) (*Bracket, error) {
 		UpdatedAt: updatedAt,
 	}
 
-	return &b, nil
+	log.Println("type results: ", reflect.TypeOf(bracket.Results))
+
+	log.Println("firstRound: ", bracket.Results.FirstRound)
+	log.Println("type firstRound: ", reflect.TypeOf(bracket.Results.FirstRound))
+	log.Println("secondRound: ", bracket.Results.SecondRound)
+	log.Println("thirdRound: ", bracket.Results.ThirdRound)
+	log.Println("fourthRound: ", bracket.Results.FourthRound)
+	log.Println("type fourthRound: ", reflect.TypeOf(bracket.Results.FourthRound))
+
+	return &bracket, nil
 }
 
 func fullBracketDemo() Bracket {

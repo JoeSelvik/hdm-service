@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAG2KEMjqBOHwkVFw1eXZAx9tIxbuxCD4g9S0u726wnO7mi8ZCBDQzeR6hYYLcVCHvjTJZAcwyVHZA1JfEC4kiduIa4xWRclZBouZCJYjBQo9aWqvfvKHHZBum8DfvZAmaYNvScW2uLWhEWbU14rGmY7HTkNpneS6iSd7nKnBJp38UQwAlsr1ZA9kZD"
+	AccessToken     = "EAACEdEose0cBAOG0Ix2uUCLhxwnlP8mkRnrkNHMUsxP7fxZBlZAma4WMNmKdfpywzL1ModBzGjCJHDofHaLbJDVEESruZAQt28TOHLHMkkcN5UwXM70y9XwCTtZCQwVLxGlaqFN7mXMiizdVTts4CZAKhO3HvxN4hUR0xNIeGU06uyXmXxckj"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -97,7 +97,7 @@ func GetDBHandle() *sql.DB {
 	return db
 }
 
-func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
+func CreateSampleBracket() *Bracket {
 	// Teams
 	teams := make([]TeamPair, 4)
 	teams[0] = TeamPair{"joe", "matt"}
@@ -127,6 +127,11 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	results.ThirdRound = thirdRound
 
 	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
+	return &bracket
+}
+
+func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
+	bracket := CreateSampleBracket()
 
 	// Serialize a Bracket so jsQuery can understand it
 	var bracketJS JSBracket
@@ -152,9 +157,9 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	// 	]
 	// ] // no consolation
 	resultJS := make([]interface{}, 3)
-	resultJS[0] = results.FirstRound
-	resultJS[1] = results.SecondRound
-	resultJS[2] = results.ThirdRound
+	resultJS[0] = bracket.Results.FirstRound
+	resultJS[1] = bracket.Results.SecondRound
+	resultJS[2] = bracket.Results.ThirdRound
 	bracketJS.Results = resultJS
 
 	js, err := json.Marshal(bracketJS)
@@ -181,19 +186,20 @@ func GetStartTime() time.Time {
 func setupDatabase() {
 	db := GetDBHandle()
 
-	err := CreateContenderTable(db)
-	if err != nil {
-		log.Println("Failed to create contenders table:", err)
-		return
-	}
+	// err := CreateContenderTable(db)
+	// if err != nil {
+	// 	log.Println("Failed to create contenders table:", err)
+	// 	return
+	// }
 
-	err = CreatePostsTable(GetStartTime(), db)
-	if err != nil {
-		log.Println("Failed to create posts table:", err)
-		return
-	}
+	// err = CreatePostsTable(GetStartTime(), db)
+	// if err != nil {
+	// 	log.Println("Failed to create posts table:", err)
+	// 	return
+	// }
 
 	// bracket tables
+	_ = CreateBracketsTable(db)
 }
 
 func getFBData() {
@@ -210,16 +216,19 @@ func getFBData() {
 }
 
 func main() {
+	log.Println("hdm Madness")
+
 	// setupDatabase()
 	// UpdateHDMContenderDependentData()
 
-	// db := GetDBHandle()
+	db := GetDBHandle()
 	// contenders, _ := GetHDMContenders(db)
 	// for k, c := range contenders {
 	// 	fmt.Printf("%s: %v\n", k, c)
 	// }
 
-	CreateInitialTeams()
+	// CreateInitialTeams()
+	_, _ = GetBracket(db, 666)
 
 	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	http.ListenAndServe(":8080", nil)
