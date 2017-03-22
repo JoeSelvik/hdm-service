@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAOG0Ix2uUCLhxwnlP8mkRnrkNHMUsxP7fxZBlZAma4WMNmKdfpywzL1ModBzGjCJHDofHaLbJDVEESruZAQt28TOHLHMkkcN5UwXM70y9XwCTtZCQwVLxGlaqFN7mXMiizdVTts4CZAKhO3HvxN4hUR0xNIeGU06uyXmXxckj"
+	AccessToken     = "EAACEdEose0cBAECsPiLgFt1ER3JUQgivPg3XUJvZAYPiSYZAp9g2hAfO5F3giI5it8S3BFswi6JMxc5peMJso5Sd8PPYrjiIwo8AMphQJGHzXuYaOGhWre2e3I6eyAwOGyO2dF12RAeWf3ZAWAYQlgUjGyj66qlExLXclRtceNKEwlnL71Q"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -221,14 +221,13 @@ func main() {
 	// setupDatabase()
 	// UpdateHDMContenderDependentData()
 
-	db := GetDBHandle()
+	// db := GetDBHandle()
 	// contenders, _ := GetHDMContenders(db)
 	// for k, c := range contenders {
 	// 	fmt.Printf("%s: %v\n", k, c)
 	// }
 
-	// CreateInitialTeams()
-	_, _ = GetBracket(db, 666)
+	CreateInitialTeams()
 
 	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
 	http.ListenAndServe(":8080", nil)

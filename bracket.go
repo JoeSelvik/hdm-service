@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"sort"
 	"time"
 )
@@ -31,7 +30,8 @@ type TeamPair struct {
 }
 
 // results := make([]interface{}, 3)
-// ... create round, see below
+// .. firstRound := make([][]interface{}, 4)
+// .. firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
 // results[0] = firstRound
 // ...
 type SixtyFourResults struct {
@@ -41,11 +41,6 @@ type SixtyFourResults struct {
 	FourthRound [][]interface{}
 	FifthRound  [][]interface{}
 	SixthRound  [][]interface{}
-}
-
-// firstRound := make([][]interface{}, 4)
-// firstRound[0] = []interface{}{1, 0, "firstRound-m0"}
-type Round struct {
 }
 
 func (b *Bracket) DBTableName() string {
@@ -117,10 +112,11 @@ func CreateBracketsTable(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
-	// teams = GetCreateInitialTeams
-	// reults = CreateInitialResults
-	bracket := CreateSampleBracket()
-	_, _ = bracket.CreateBracket(tx)
+	// bracket := CreateSampleBracket()
+	// _, _ = bracket.CreateBracket(tx)
+
+	// teams, err := GetCreateInitialTeams()
+	// reults = CreateInitialResults()
 
 	// Commit the transaction.
 	if err = tx.Commit(); err != nil {
@@ -135,7 +131,7 @@ func (b *Bracket) UpdateResults() {
 
 }
 
-func CreateInitialTeams() {
+func CreateInitialTeams() ([]TeamPair, error) {
 	db := GetDBHandle()
 	contenders, _ := GetHDMContenders(db)
 
@@ -145,11 +141,56 @@ func CreateInitialTeams() {
 	}
 	sort.Sort(sortedContenders)
 
-	for i, c := range sortedContenders {
-		fmt.Println(i, c)
-	}
+	// for i, c := range sortedContenders {
+	// 	fmt.Println(i, c)
+	// }
+	// fmt.Println(sortedContenders[0])
 
-	// return []Teams{}
+	teams := make([]TeamPair, 32)
+
+	// East - 1, top left
+	teams[0] = TeamPair{sortedContenders[0].Name, ""}
+	teams[1] = TeamPair{sortedContenders[24].Name, sortedContenders[36].Name}
+	teams[2] = TeamPair{sortedContenders[20].Name, sortedContenders[44].Name}
+	teams[3] = TeamPair{sortedContenders[4].Name, ""}
+	teams[4] = TeamPair{sortedContenders[8].Name, ""}
+	teams[5] = TeamPair{sortedContenders[16].Name, sortedContenders[40].Name}
+	teams[6] = TeamPair{sortedContenders[28].Name, sortedContenders[32].Name}
+	teams[7] = TeamPair{sortedContenders[12].Name, ""}
+
+	// West - 2, bottom left
+	teams[8] = TeamPair{sortedContenders[2].Name, ""}
+	teams[9] = TeamPair{sortedContenders[26].Name, sortedContenders[38].Name}
+	teams[10] = TeamPair{sortedContenders[22].Name, "46th seed"} // 46?
+	teams[11] = TeamPair{sortedContenders[6].Name, ""}
+	teams[12] = TeamPair{sortedContenders[10].Name, ""}
+	teams[13] = TeamPair{sortedContenders[18].Name, sortedContenders[42].Name}
+	teams[14] = TeamPair{sortedContenders[30].Name, sortedContenders[34].Name}
+	teams[15] = TeamPair{sortedContenders[14].Name, ""}
+
+	// Midwest - 3, top right
+	teams[16] = TeamPair{sortedContenders[1].Name, ""}
+	teams[17] = TeamPair{sortedContenders[25].Name, sortedContenders[37].Name}
+	teams[18] = TeamPair{sortedContenders[21].Name, sortedContenders[45].Name}
+	teams[19] = TeamPair{sortedContenders[5].Name, ""}
+	teams[20] = TeamPair{sortedContenders[9].Name, ""}
+	teams[21] = TeamPair{sortedContenders[17].Name, sortedContenders[41].Name}
+	teams[22] = TeamPair{sortedContenders[29].Name, sortedContenders[33].Name}
+	teams[23] = TeamPair{sortedContenders[13].Name, ""}
+
+	// South - 4, bottom right
+	teams[24] = TeamPair{sortedContenders[3].Name, ""}
+	teams[25] = TeamPair{sortedContenders[27].Name, sortedContenders[39].Name}
+	teams[26] = TeamPair{sortedContenders[23].Name, "47th seed"} // 47?
+	teams[27] = TeamPair{sortedContenders[7].Name, ""}
+	teams[28] = TeamPair{sortedContenders[11].Name, ""}
+	teams[29] = TeamPair{sortedContenders[19].Name, sortedContenders[43].Name}
+	teams[30] = TeamPair{sortedContenders[31].Name, sortedContenders[35].Name}
+	teams[31] = TeamPair{sortedContenders[15].Name, ""}
+
+	fmt.Println(teams)
+
+	return []TeamPair{}, nil
 }
 
 func CreateInitialResults() {
@@ -169,42 +210,19 @@ func GetBracket(db *sql.DB, x int) (*Bracket, error) {
 		return nil, err
 	}
 
-	log.Println("strTeams: ", strTeams)
-	log.Println("strResults: ", strResults)
-
 	teams := []TeamPair{}
 	json.Unmarshal([]byte(strTeams), &teams)
 
 	results := SixtyFourResults{}
 	json.Unmarshal([]byte(strResults), &results)
 
-	var round string
-	// for i := 0; i < len(results); i++ {
-	// 	json.Unmarshal([]byte(results[i]), &round)
-	// 	results.FirstRound = round
-	// }
-	json.Unmarshal([]byte(results.FirstRound), &round)
-	results.FirstRound = round
-
-	log.Println("teams: ", teams)
-	log.Println("results: ", results)
-
 	bracket := Bracket{
 		Id:        id,
 		Teams:     teams,
-		Results:   SixtyFourResults{},
+		Results:   results,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	}
-
-	log.Println("type results: ", reflect.TypeOf(bracket.Results))
-
-	log.Println("firstRound: ", bracket.Results.FirstRound)
-	log.Println("type firstRound: ", reflect.TypeOf(bracket.Results.FirstRound))
-	log.Println("secondRound: ", bracket.Results.SecondRound)
-	log.Println("thirdRound: ", bracket.Results.ThirdRound)
-	log.Println("fourthRound: ", bracket.Results.FourthRound)
-	log.Println("type fourthRound: ", reflect.TypeOf(bracket.Results.FourthRound))
 
 	return &bracket, nil
 }
