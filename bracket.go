@@ -35,12 +35,12 @@ type TeamPair struct {
 // results[0] = firstRound
 // ...
 type SixtyFourResults struct {
-	FirstRound  [][]interface{}
-	SecondRound [][]interface{}
-	ThirdRound  [][]interface{}
-	FourthRound [][]interface{}
-	FifthRound  [][]interface{}
-	SixthRound  [][]interface{}
+	FirstRound   [][]interface{}
+	SecondRound  [][]interface{}
+	SweetSixteen [][]interface{}
+	EliteEight   [][]interface{}
+	FinalFour    [][]interface{}
+	Championship [][]interface{}
 }
 
 func (b *Bracket) DBTableName() string {
@@ -112,11 +112,8 @@ func CreateBracketsTable(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
-	// bracket := CreateSampleBracket()
-	// _, _ = bracket.CreateBracket(tx)
-
-	// teams, err := GetCreateInitialTeams()
-	// reults = CreateInitialResults()
+	bracket, _ := CreateInitialBracket()
+	_, _ = bracket.CreateBracket(tx)
 
 	// Commit the transaction.
 	if err = tx.Commit(); err != nil {
@@ -127,11 +124,20 @@ func CreateBracketsTable(db *sql.DB) error {
 	return nil
 }
 
+func CreateInitialBracket() (*Bracket, error) {
+	teams, _ := CreateInitialTeams()
+	results, _ := CreateInitialResults()
+	bracket := Bracket{1, *teams, *results, time.Now(), time.Now()}
+	return &bracket, nil
+}
+
 func (b *Bracket) UpdateResults() {
 
 }
 
-func CreateInitialTeams() ([]TeamPair, error) {
+func CreateInitialTeams() (*[]TeamPair, error) {
+	log.Println("Creating initial teams")
+
 	db := GetDBHandle()
 	contenders, _ := GetHDMContenders(db)
 
@@ -140,11 +146,6 @@ func CreateInitialTeams() ([]TeamPair, error) {
 		sortedContenders = append(sortedContenders, c)
 	}
 	sort.Sort(sortedContenders)
-
-	// for i, c := range sortedContenders {
-	// 	fmt.Println(i, c)
-	// }
-	// fmt.Println(sortedContenders[0])
 
 	teams := make([]TeamPair, 32)
 
@@ -188,13 +189,111 @@ func CreateInitialTeams() ([]TeamPair, error) {
 	teams[30] = TeamPair{sortedContenders[31].Name, sortedContenders[35].Name}
 	teams[31] = TeamPair{sortedContenders[15].Name, ""}
 
+	for i, c := range sortedContenders {
+		fmt.Println(i, c.Name, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven)
+	}
 	fmt.Println(teams)
 
-	return []TeamPair{}, nil
+	return &[]TeamPair{}, nil
 }
 
-func CreateInitialResults() {
+func CreateInitialResults() (*SixtyFourResults, error) {
+	log.Println("Creating initial results")
 
+	// firstRound
+	firstRound := make([][]interface{}, 32)
+	firstRound[0] = []interface{}{nil, nil, "firstRound_0"}
+	firstRound[1] = []interface{}{nil, nil, "firstRound_1"}
+	firstRound[2] = []interface{}{nil, nil, "firstRound_2"}
+	firstRound[3] = []interface{}{nil, nil, "firstRound_3"}
+	firstRound[4] = []interface{}{nil, nil, "firstRound_4"}
+	firstRound[5] = []interface{}{nil, nil, "firstRound_5"}
+	firstRound[6] = []interface{}{nil, nil, "firstRound_6"}
+	firstRound[7] = []interface{}{nil, nil, "firstRound_7"}
+
+	firstRound[8] = []interface{}{nil, nil, "firstRound_8"}
+	firstRound[9] = []interface{}{nil, nil, "firstRound_9"}
+	firstRound[10] = []interface{}{nil, nil, "firstRound_10"}
+	firstRound[11] = []interface{}{nil, nil, "firstRound_11"}
+	firstRound[12] = []interface{}{nil, nil, "firstRound_12"}
+	firstRound[13] = []interface{}{nil, nil, "firstRound_13"}
+	firstRound[14] = []interface{}{nil, nil, "firstRound_14"}
+	firstRound[15] = []interface{}{nil, nil, "firstRound_15"}
+
+	firstRound[16] = []interface{}{nil, nil, "firstRound_16"}
+	firstRound[17] = []interface{}{nil, nil, "firstRound_17"}
+	firstRound[18] = []interface{}{nil, nil, "firstRound_18"}
+	firstRound[19] = []interface{}{nil, nil, "firstRound_19"}
+	firstRound[20] = []interface{}{nil, nil, "firstRound_20"}
+	firstRound[21] = []interface{}{nil, nil, "firstRound_21"}
+	firstRound[22] = []interface{}{nil, nil, "firstRound_22"}
+	firstRound[23] = []interface{}{nil, nil, "firstRound_23"}
+
+	firstRound[24] = []interface{}{nil, nil, "firstRound_24"}
+	firstRound[25] = []interface{}{nil, nil, "firstRound_25"}
+	firstRound[26] = []interface{}{nil, nil, "firstRound_26"}
+	firstRound[27] = []interface{}{nil, nil, "firstRound_27"}
+	firstRound[28] = []interface{}{nil, nil, "firstRound_28"}
+	firstRound[29] = []interface{}{nil, nil, "firstRound_29"}
+	firstRound[30] = []interface{}{nil, nil, "firstRound_30"}
+	firstRound[31] = []interface{}{nil, nil, "firstRound_31"}
+
+	// secondRound
+	secondRound := make([][]interface{}, 16)
+	secondRound[0] = []interface{}{nil, nil, "secondRound_0"}
+	secondRound[1] = []interface{}{nil, nil, "secondRound_1"}
+	secondRound[2] = []interface{}{nil, nil, "secondRound_2"}
+	secondRound[3] = []interface{}{nil, nil, "secondRound_3"}
+	secondRound[4] = []interface{}{nil, nil, "secondRound_4"}
+	secondRound[5] = []interface{}{nil, nil, "secondRound_5"}
+	secondRound[6] = []interface{}{nil, nil, "secondRound_6"}
+	secondRound[7] = []interface{}{nil, nil, "secondRound_7"}
+
+	secondRound[8] = []interface{}{nil, nil, "secondRound_8"}
+	secondRound[9] = []interface{}{nil, nil, "secondRound_9"}
+	secondRound[10] = []interface{}{nil, nil, "secondRound_10"}
+	secondRound[11] = []interface{}{nil, nil, "secondRound_11"}
+	secondRound[12] = []interface{}{nil, nil, "secondRound_12"}
+	secondRound[13] = []interface{}{nil, nil, "secondRound_13"}
+	secondRound[14] = []interface{}{nil, nil, "secondRound_14"}
+	secondRound[15] = []interface{}{nil, nil, "secondRound_15"}
+
+	// sweetSixteen
+	sweetSixteen := make([][]interface{}, 8)
+	sweetSixteen[0] = []interface{}{nil, nil, "sweetSixteen_0"}
+	sweetSixteen[1] = []interface{}{nil, nil, "sweetSixteen_1"}
+	sweetSixteen[2] = []interface{}{nil, nil, "sweetSixteen_2"}
+	sweetSixteen[3] = []interface{}{nil, nil, "sweetSixteen_3"}
+	sweetSixteen[4] = []interface{}{nil, nil, "sweetSixteen_4"}
+	sweetSixteen[5] = []interface{}{nil, nil, "sweetSixteen_5"}
+	sweetSixteen[6] = []interface{}{nil, nil, "sweetSixteen_6"}
+	sweetSixteen[7] = []interface{}{nil, nil, "secondRound_7"}
+
+	// eliteEight
+	eliteEight := make([][]interface{}, 4)
+	eliteEight[0] = []interface{}{nil, nil, "eliteEight_0"}
+	eliteEight[1] = []interface{}{nil, nil, "eliteEight_1"}
+	eliteEight[2] = []interface{}{nil, nil, "eliteEight_2"}
+	eliteEight[3] = []interface{}{nil, nil, "eliteEight_3"}
+
+	// finalFour
+	finalFour := make([][]interface{}, 2)
+	finalFour[0] = []interface{}{nil, nil, "finalFour_0"}
+	finalFour[1] = []interface{}{nil, nil, "finalFour_1"}
+
+	// championship
+	championship := make([][]interface{}, 1)
+	championship[0] = []interface{}{nil, nil, "championship_0"}
+
+	results := SixtyFourResults{}
+	results.FirstRound = firstRound
+	results.SecondRound = secondRound
+	results.SweetSixteen = sweetSixteen
+	results.EliteEight = eliteEight
+	results.FinalFour = finalFour
+	results.Championship = championship
+
+	return &results, nil
 }
 
 func GetBracket(db *sql.DB, x int) (*Bracket, error) {

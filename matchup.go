@@ -9,7 +9,7 @@ import (
 
 type Matchup struct {
 	Id         int
-	Name       string
+	Name       string // ie: firstRound_g0
 	ContenderA Contender
 	APosts     []Post
 	AVotes     int

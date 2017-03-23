@@ -116,22 +116,23 @@ func CreateSampleBracket() *Bracket {
 	secondRound[0] = []interface{}{nil, nil, "g5"}
 	secondRound[1] = []interface{}{nil, nil, "g6"}
 
-	thirdRound := make([][]interface{}, 2)
-	thirdRound[0] = []interface{}{nil, nil, "g7"}
-	thirdRound[1] = []interface{}{nil, nil, "g8"}
+	sweetSixteen := make([][]interface{}, 2)
+	sweetSixteen[0] = []interface{}{nil, nil, "g7"}
+	sweetSixteen[1] = []interface{}{nil, nil, "g8"}
 
 	// Total results
 	results := SixtyFourResults{}
 	results.FirstRound = firstRound
 	results.SecondRound = secondRound
-	results.ThirdRound = thirdRound
+	results.SweetSixteen = sweetSixteen
 
 	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
 	return &bracket
 }
 
 func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
-	bracket := CreateSampleBracket()
+	// bracket := CreateSampleBracket()
+	bracket, _ := CreateInitialBracket()
 
 	// Serialize a Bracket so jsQuery can understand it
 	var bracketJS JSBracket
@@ -156,10 +157,13 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	// 		[[null,null,"g7"],[null,null,"g8"]]  // round 3
 	// 	]
 	// ] // no consolation
-	resultJS := make([]interface{}, 3)
+	resultJS := make([]interface{}, 6)
 	resultJS[0] = bracket.Results.FirstRound
 	resultJS[1] = bracket.Results.SecondRound
-	resultJS[2] = bracket.Results.ThirdRound
+	resultJS[2] = bracket.Results.SweetSixteen
+	resultJS[3] = bracket.Results.EliteEight
+	resultJS[4] = bracket.Results.FinalFour
+	resultJS[5] = bracket.Results.Championship
 	bracketJS.Results = resultJS
 
 	js, err := json.Marshal(bracketJS)
@@ -219,11 +223,11 @@ func getFBData() {
 func main() {
 	log.Println("hdm Madness")
 
-	setupDatabase()
-	UpdateHDMContenderDependentData()
+	// setupDatabase()
+	// UpdateHDMContenderDependentData()
 
 	// CreateInitialTeams()
 
-	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
-	// http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
+	http.ListenAndServe(":8080", nil)
 }
