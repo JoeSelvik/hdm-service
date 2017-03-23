@@ -248,6 +248,6 @@ Loop:
 		}
 		count++
 	}
-	log.Println("Number posts:", len(posts))
+	log.Println("Number of FB Posts:", len(posts))
 	return posts, nil
 }

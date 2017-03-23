@@ -169,13 +169,18 @@ func UpdateHDMContenderDependentData() {
 
 	// key, value: Post.Id, Post
 	for _, p := range posts {
+		// log.Println(fmt.Sprintf("Updating %s's post, %v", p.Author, p.Id))
 
 		// Grab contender from db if it has not been updated yet
 		var poster *Contender
 		if val, ok := contenders[p.Author]; ok {
 			poster = &val
 		} else {
-			poster, _ = GetContenderByUsername(db, p.Author)
+			poster, err = GetContenderByUsername(db, p.Author)
+			if err != nil {
+				// if post's author is no longer in the herp, skip it
+				continue
+			}
 		}
 
 		// Update Contender's data fields with Post data
@@ -196,10 +201,15 @@ func UpdateHDMContenderDependentData() {
 			} else {
 				liker, _ = GetContenderByUsername(db, p.Likes.Data[j].Name)
 			}
-			liker.TotalLikesGiven++
-			contenders[liker.Name] = *liker
+
+			// only update likes given for those in the herp
+			if liker != nil {
+				liker.TotalLikesGiven++
+				contenders[liker.Name] = *liker
+			}
 		}
 	}
+	log.Println("Finished creating map of Contenders to update")
 
 	// Update every Contender in db that was effected by Posts
 	tx, err := db.Begin()
@@ -217,6 +227,7 @@ func UpdateHDMContenderDependentData() {
 	if err = tx.Commit(); err != nil {
 		log.Println("Failed to COMMIT txn:", err)
 	}
+	log.Println("Updated Contender dependent data")
 }
 
 // GetContenderByUsername returns a pointer to the Contender witht he provided name.
@@ -234,7 +245,7 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 	err := db.QueryRow(q, name).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
 	switch {
 	case err == sql.ErrNoRows:
-		log.Printf("No user with that Name.")
+		log.Printf(fmt.Sprintf("No user with that Name, %s.", name))
 		return nil, err
 	case err != nil:
 		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
@@ -353,6 +364,6 @@ func GetFBContenders(session *fb.Session) ([]Contender, error) {
 		}
 	}
 
-	log.Println("Number of Contenders:", len(contenders))
+	log.Println("Number of FB Contenders:", len(contenders))
 	return contenders, nil
 }

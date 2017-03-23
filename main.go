@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAECsPiLgFt1ER3JUQgivPg3XUJvZAYPiSYZAp9g2hAfO5F3giI5it8S3BFswi6JMxc5peMJso5Sd8PPYrjiIwo8AMphQJGHzXuYaOGhWre2e3I6eyAwOGyO2dF12RAeWf3ZAWAYQlgUjGyj66qlExLXclRtceNKEwlnL71Q"
+	AccessToken     = "EAACEdEose0cBAMuvAHV8ecVbJ9gUVRwfkODHIEmIFsUIVpToUNgW7Wvg9t1ECH6SqIfZA32mccZCLItpbZCOJ87Qc5gb1KieAA8V1g4vbd2ZC3dLkCxzFCg0lj09Bl3BncE6wKJ5tzjuwDkIK8Bqn2Msq9npegchfFZCegqLZCzhQhTup3PdE5"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -172,12 +172,13 @@ func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
+// GetStartTime returns the time you want to get posts up until
 func GetStartTime() time.Time {
 	// fb created_time str:      2017-03-04T13:05:20+0000
 	// sqlite CURRENT_TIMESTAMP: 2017-03-06 15:36:17
 	// Golang template time      Mon, 01/02/06, 03:04PM
 	// HDM golang template       Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
-	value := "2017-01-01T00:00:00+0000"
+	value := "2016-01-01T00:00:00+0000"
 	t, err := time.Parse(GoTimeLayout, value)
 	handle_error("Could not parse start time", err, true)
 	return t
@@ -186,20 +187,20 @@ func GetStartTime() time.Time {
 func setupDatabase() {
 	db := GetDBHandle()
 
-	// err := CreateContenderTable(db)
-	// if err != nil {
-	// 	log.Println("Failed to create contenders table:", err)
-	// 	return
-	// }
+	err := CreateContenderTable(db)
+	if err != nil {
+		log.Println("Failed to create contenders table:", err)
+		return
+	}
 
-	// err = CreatePostsTable(GetStartTime(), db)
-	// if err != nil {
-	// 	log.Println("Failed to create posts table:", err)
-	// 	return
-	// }
+	err = CreatePostsTable(GetStartTime(), db)
+	if err != nil {
+		log.Println("Failed to create posts table:", err)
+		return
+	}
 
 	// bracket tables
-	_ = CreateBracketsTable(db)
+	// _ = CreateBracketsTable(db)
 }
 
 func getFBData() {
@@ -218,17 +219,11 @@ func getFBData() {
 func main() {
 	log.Println("hdm Madness")
 
-	// setupDatabase()
-	// UpdateHDMContenderDependentData()
+	setupDatabase()
+	UpdateHDMContenderDependentData()
 
-	// db := GetDBHandle()
-	// contenders, _ := GetHDMContenders(db)
-	// for k, c := range contenders {
-	// 	fmt.Printf("%s: %v\n", k, c)
-	// }
+	// CreateInitialTeams()
 
-	CreateInitialTeams()
-
-	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
-	http.ListenAndServe(":8080", nil)
+	// http.HandleFunc("/bracketData/", sampleBracketDataHandler)
+	// http.ListenAndServe(":8080", nil)
 }
