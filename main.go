@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAMuvAHV8ecVbJ9gUVRwfkODHIEmIFsUIVpToUNgW7Wvg9t1ECH6SqIfZA32mccZCLItpbZCOJ87Qc5gb1KieAA8V1g4vbd2ZC3dLkCxzFCg0lj09Bl3BncE6wKJ5tzjuwDkIK8Bqn2Msq9npegchfFZCegqLZCzhQhTup3PdE5"
+	AccessToken     = "EAACEdEose0cBAMhZAv7rObp5qVvaZBbBxG9HFsByXVLorRX3nl5nCkadqNGg2mjKlU0hBKZCKIgnRyHSLSECfoo4iuxoLOqNhtvFCuOLZCdOGxZCzAnf6l0nTO6muSYmh4YEuwvk7FxGRBOM2p8btWxCVlyE84goBueXy8e9SM9GVv5ywY4EZA"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
@@ -130,42 +130,13 @@ func CreateSampleBracket() *Bracket {
 	return &bracket
 }
 
-func sampleBracketDataHandler(w http.ResponseWriter, r *http.Request) {
-	// bracket := CreateSampleBracket()
-	bracket, _ := CreateInitialBracket()
+func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
+	db := GetDBHandle()
+	bracket, _ := GetHDMBracket(db, 1)
 
-	// Serialize a Bracket so jsQuery can understand it
-	var bracketJS JSBracket
+	bracketJS := bracket.serialize()
 
-	// Teams needs to be a list of arrays
-	// [["joe","matt"], ["jim","mike"]]
-	teamJS := make([][]interface{}, 4)
-	for i := 0; i < len(bracket.Teams); i++ {
-		t := TeamPair{bracket.Teams[i].ContenderAName, bracket.Teams[i].ContenderBName}
-		teamJS[i] = t.serialize()
-	}
-	bracketJS.Teams = teamJS
-
-	// Results is a multi-dimension list
-	// first list contains a list of main and a list of consolation results
-	// winner list contains a list for each round
-	// each round contains a list of each game
-	// [
-	// 	[ // main
-	// 		[[1,0,"g1"],[null,null,"g2"],[null,null,"g3"],[null,null,"g4"]],  // round 1
-	// 		[[null,null,"g5"],[null,null,"g6"]],  // round 2
-	// 		[[null,null,"g7"],[null,null,"g8"]]  // round 3
-	// 	]
-	// ] // no consolation
-	resultJS := make([]interface{}, 6)
-	resultJS[0] = bracket.Results.FirstRound
-	resultJS[1] = bracket.Results.SecondRound
-	resultJS[2] = bracket.Results.SweetSixteen
-	resultJS[3] = bracket.Results.EliteEight
-	resultJS[4] = bracket.Results.FinalFour
-	resultJS[5] = bracket.Results.Championship
-	bracketJS.Results = resultJS
-
+	// bundle up JSBracket for transport!
 	js, err := json.Marshal(bracketJS)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -191,20 +162,20 @@ func GetStartTime() time.Time {
 func setupDatabase() {
 	db := GetDBHandle()
 
-	err := CreateContenderTable(db)
-	if err != nil {
-		log.Println("Failed to create contenders table:", err)
-		return
-	}
+	// err := CreateContenderTable(db)
+	// if err != nil {
+	// 	log.Println("Failed to create contenders table:", err)
+	// 	return
+	// }
 
-	err = CreatePostsTable(GetStartTime(), db)
-	if err != nil {
-		log.Println("Failed to create posts table:", err)
-		return
-	}
+	// err = CreatePostsTable(GetStartTime(), db)
+	// if err != nil {
+	// 	log.Println("Failed to create posts table:", err)
+	// 	return
+	// }
 
 	// bracket tables
-	// _ = CreateBracketsTable(db)
+	_ = CreateBracketsTable(db)
 }
 
 func getFBData() {
@@ -226,8 +197,10 @@ func main() {
 	// setupDatabase()
 	// UpdateHDMContenderDependentData()
 
-	// CreateInitialTeams()
+	// db := GetDBHandle()
+	// bracket, _ := GetHDMBracket(db, 1)
+	// log.Printf("Bracket %+v", bracket)
 
-	http.HandleFunc("/bracketData/", sampleBracketDataHandler)
+	http.HandleFunc("/bracketData/", bracketDataHandler)
 	http.ListenAndServe(":8080", nil)
 }

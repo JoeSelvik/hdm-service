@@ -56,6 +56,42 @@ func (t *TeamPair) serialize() []interface{} {
 	return []interface{}{t.ContenderAName, t.ContenderBName}
 }
 
+// Return a JSBracket from Bracket. When Marshalled, JSBracket is properly formatted for jQueryBracket
+func (b *Bracket) serialize() *JSBracket {
+	var bracketJS JSBracket
+
+	// Teams needs to be a list of arrays
+	// [["joe","matt"], ["jim","mike"], ...]
+	teamJS := make([][]interface{}, 32)
+	for i := 0; i < len(b.Teams); i++ {
+		t := TeamPair{b.Teams[i].ContenderAName, b.Teams[i].ContenderBName}
+		teamJS[i] = t.serialize()
+	}
+	bracketJS.Teams = teamJS
+
+	// Results is a multi-dimension list
+	// first list contains a list of main and a list of consolation results
+	// winner list contains a list for each round
+	// each round contains a list of each game
+	// [
+	// 	  [ // main
+	// 	    [[1,0,"g1"],[null,null,"g2"],[null,null,"g3"],[null,null,"g4"]],  // round 1
+	// 		[[null,null,"g5"],[null,null,"g6"]],  // round 2
+	// 		[[null,null,"g7"],[null,null,"g8"]]  // round 3
+	// 	  ]
+	// ] // no consolation
+	resultJS := make([]interface{}, 6)
+	resultJS[0] = b.Results.FirstRound
+	resultJS[1] = b.Results.SecondRound
+	resultJS[2] = b.Results.SweetSixteen
+	resultJS[3] = b.Results.EliteEight
+	resultJS[4] = b.Results.FinalFour
+	resultJS[5] = b.Results.Championship
+	bracketJS.Results = resultJS
+
+	return &bracketJS
+}
+
 func (b *Bracket) CreateBracket(tx *sql.Tx) (int64, error) {
 	q := `
 	INSERT INTO brackets (
@@ -112,7 +148,7 @@ func CreateBracketsTable(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
-	bracket, _ := CreateInitialBracket()
+	bracket, _ := GenerateInitialBracket()
 	_, _ = bracket.CreateBracket(tx)
 
 	// Commit the transaction.
@@ -124,15 +160,11 @@ func CreateBracketsTable(db *sql.DB) error {
 	return nil
 }
 
-func CreateInitialBracket() (*Bracket, error) {
+func GenerateInitialBracket() (*Bracket, error) {
 	teams, _ := CreateInitialTeams()
 	results, _ := CreateInitialResults()
 	bracket := Bracket{1, *teams, *results, time.Now(), time.Now()}
 	return &bracket, nil
-}
-
-func (b *Bracket) UpdateResults() {
-
 }
 
 func CreateInitialTeams() (*[]TeamPair, error) {
@@ -189,12 +221,12 @@ func CreateInitialTeams() (*[]TeamPair, error) {
 	teams[30] = TeamPair{sortedContenders[31].Name, sortedContenders[35].Name}
 	teams[31] = TeamPair{sortedContenders[15].Name, ""}
 
-	for i, c := range sortedContenders {
-		fmt.Println(i, c.Name, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven)
-	}
-	fmt.Println(teams)
+	// for i, c := range sortedContenders {
+	// 	fmt.Println(i, c.Name, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven)
+	// }
+	// fmt.Println(teams)
 
-	return &[]TeamPair{}, nil
+	return &teams, nil
 }
 
 func CreateInitialResults() (*SixtyFourResults, error) {
@@ -296,7 +328,11 @@ func CreateInitialResults() (*SixtyFourResults, error) {
 	return &results, nil
 }
 
-func GetBracket(db *sql.DB, x int) (*Bracket, error) {
+func (b *Bracket) UpdateResults() {
+
+}
+
+func GetHDMBracket(db *sql.DB, x int) (*Bracket, error) {
 	var id int
 	var strTeams string
 	var strResults string
