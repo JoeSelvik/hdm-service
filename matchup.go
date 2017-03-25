@@ -28,3 +28,28 @@ func (m *Matchup) DBTableName() string {
 func (m *Matchup) Path() string {
 	return "/matchups/"
 }
+
+// Places 32 Matchups into DB with InProgress set to true
+func CreateFirstRoundMatchups() {
+
+}
+
+// Updates 32 Matchups in DB to InProgress false
+func EndFirstRoundMatchups() {
+
+}
+
+// GetMatchup pulls any matchup from the DB and returns data needed to render matchupView
+//
+// name == firstRound_31
+func GetMatchupData(name string) *Matchup {
+	db := GetDBHandle()
+	bracket, _ := GetHDMBracket(db, 1)
+
+	var id string
+	var contenderA 
+
+	m := Matchup{
+
+	}
+}

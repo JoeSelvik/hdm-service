@@ -97,39 +97,6 @@ func GetDBHandle() *sql.DB {
 	return db
 }
 
-func CreateSampleBracket() *Bracket {
-	// Teams
-	teams := make([]TeamPair, 4)
-	teams[0] = TeamPair{"joe", "matt"}
-	teams[1] = TeamPair{"jim", "mike"}
-	teams[2] = TeamPair{"tim", "amy"}
-	teams[3] = TeamPair{"tim", "amy"}
-
-	// Each round of results
-	firstRound := make([][]interface{}, 4)
-	firstRound[0] = []interface{}{1, 0, "g1"}
-	firstRound[1] = []interface{}{nil, nil, "g2"}
-	firstRound[2] = []interface{}{nil, nil, "g3"}
-	firstRound[3] = []interface{}{nil, nil, "g4"}
-
-	secondRound := make([][]interface{}, 2)
-	secondRound[0] = []interface{}{nil, nil, "g5"}
-	secondRound[1] = []interface{}{nil, nil, "g6"}
-
-	sweetSixteen := make([][]interface{}, 2)
-	sweetSixteen[0] = []interface{}{nil, nil, "g7"}
-	sweetSixteen[1] = []interface{}{nil, nil, "g8"}
-
-	// Total results
-	results := SixtyFourResults{}
-	results.FirstRound = firstRound
-	results.SecondRound = secondRound
-	results.SweetSixteen = sweetSixteen
-
-	bracket := Bracket{666, teams, results, time.Now(), time.Now()}
-	return &bracket
-}
-
 func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
 	db := GetDBHandle()
 	bracket, _ := GetHDMBracket(db, 1)
