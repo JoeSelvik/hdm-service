@@ -98,8 +98,10 @@ func GetDBHandle() *sql.DB {
 }
 
 func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
-	db := GetDBHandle()
-	bracket, _ := GetHDMBracket(db, 1)
+	// db := GetDBHandle()
+	// bracket, _ := GetHDMBracket(db, 1)
+
+	bracket, _ := GenerateInitialBracket()
 
 	bracketJS := bracket.serialize()
 
@@ -167,6 +169,8 @@ func main() {
 	// db := GetDBHandle()
 	// bracket, _ := GetHDMBracket(db, 1)
 	// log.Printf("Bracket %+v", bracket)
+
+	// CreateFirstRoundMatchups()
 
 	http.HandleFunc("/bracketData/", bracketDataHandler)
 	http.ListenAndServe(":8080", nil)

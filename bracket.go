@@ -234,10 +234,10 @@ func CreateInitialResults() (*SixtyFourResults, error) {
 
 	// firstRound
 	firstRound := make([][]interface{}, 32)
-	firstRound[0] = []interface{}{nil, nil, "firstRound_0"}
-	firstRound[1] = []interface{}{nil, nil, "firstRound_1"}
-	firstRound[2] = []interface{}{nil, nil, "firstRound_2"}
-	firstRound[3] = []interface{}{nil, nil, "firstRound_3"}
+	firstRound[0] = []interface{}{1, 0, "firstRound_0"}
+	firstRound[1] = []interface{}{3, 4, "firstRound_1"}
+	firstRound[2] = []interface{}{5, 69, "firstRound_2"}
+	firstRound[3] = []interface{}{1, 0, "firstRound_3"}
 	firstRound[4] = []interface{}{nil, nil, "firstRound_4"}
 	firstRound[5] = []interface{}{nil, nil, "firstRound_5"}
 	firstRound[6] = []interface{}{nil, nil, "firstRound_6"}
