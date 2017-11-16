@@ -11,13 +11,15 @@ import (
 
 type Contender struct {
 	Id                 string `facebook:",required"`
-	Name               string
-	TotalPosts         []string
-	TotalLikesReceived int
-	AvgLikesPerPost    int
-	TotalLikesGiven    int
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+	FbGroupId          int
+	Name               string
+	TotalPosts         []int
+	AvgLikesPerPost    int
+	TotalLikesReceived int
+	TotalLikesGiven    int
+	PostsUsed          []int
 }
 
 func (c *Contender) DBTableName() string {
@@ -162,7 +164,7 @@ func CreateContenderTable(db *sql.DB) error {
 func UpdateHDMContenderDependentData() {
 	db := GetDBHandle()
 	posts, err := GetHDMPosts(db)
-	handle_error("Could not get posts", err, true)
+	HandleError("Could not get posts", err, true)
 
 	// Initialize a map of Contenders to be updated
 	contenders := make(map[string]Contender)
@@ -184,11 +186,11 @@ func UpdateHDMContenderDependentData() {
 		}
 
 		// Update Contender's data fields with Post data
-		poster.TotalPosts = append(poster.TotalPosts, p.Id)
+		//poster.TotalPosts = append(poster.TotalPosts, p.Id)
 		likesReceived := 0
-		for i := 0; i < len(poster.TotalPosts); i++ {
-			likesReceived = len(posts[poster.TotalPosts[i]].Likes.Data) + likesReceived
-		}
+		//for i := 0; i < len(poster.TotalPosts); i++ {
+		//	likesReceived = len(posts[poster.TotalPosts[i]].Likes.Data) + likesReceived
+		//}
 		poster.TotalLikesReceived = likesReceived
 		poster.AvgLikesPerPost = poster.TotalLikesReceived / len(poster.TotalPosts)
 		contenders[poster.Name] = *poster
@@ -213,14 +215,14 @@ func UpdateHDMContenderDependentData() {
 
 	// Update every Contender in db that was effected by Posts
 	tx, err := db.Begin()
-	handle_error("Failed to BEGIN txn", err, true)
+	HandleError("Failed to BEGIN txn", err, true)
 	defer tx.Rollback()
 
 	// key, value: Contender.Id, Contender
 	for _, c := range contenders {
 		_, err := c.UpdateContender(tx)
 		if err != nil {
-			handle_error("Could not update contender", err, true)
+			HandleError("Could not update contender", err, true)
 		}
 	}
 
@@ -251,7 +253,7 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
 		return nil, err
 	default:
-		var posts []string
+		var posts []int
 		json.Unmarshal([]byte(totalPosts), &posts)
 
 		c := &Contender{
@@ -295,7 +297,7 @@ func GetHDMContenders(db *sql.DB) (map[string]*Contender, error) {
 			return nil, err
 		}
 
-		var posts []string
+		var posts []int
 		json.Unmarshal([]byte(totalPosts), &posts)
 
 		c := Contender{

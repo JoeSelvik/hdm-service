@@ -173,12 +173,14 @@ func CreateInitialTeams() (*[]TeamPair, error) {
 	db := GetDBHandle()
 	contenders, _ := GetHDMContenders(db)
 
+	// seedContenders
 	sortedContenders := make(contenderSlice, 0, len(contenders))
 	for _, c := range contenders {
 		sortedContenders = append(sortedContenders, c)
 	}
 	sort.Sort(sortedContenders)
 
+	// pairContenders
 	teams := make([]TeamPair, 32)
 
 	// East - 1, top left

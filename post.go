@@ -10,12 +10,13 @@ import (
 )
 
 type Post struct {
-	Id         string `facebook:",required"`
+	Id        string `facebook:",required"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
 	PostedDate string
 	Author     string
 	Likes      Likes
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
 }
 
 type Like struct {

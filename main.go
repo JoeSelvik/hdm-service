@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	AccessToken     = "EAACEdEose0cBAMhZAv7rObp5qVvaZBbBxG9HFsByXVLorRX3nl5nCkadqNGg2mjKlU0hBKZCKIgnRyHSLSECfoo4iuxoLOqNhtvFCuOLZCdOGxZCzAnf6l0nTO6muSYmh4YEuwvk7FxGRBOM2p8btWxCVlyE84goBueXy8e9SM9GVv5ywY4EZA"
+	AccessToken     = "EAACEdEose0cBAG1A39ZCwsE50ZBpK0XgxD4lsKZARX8ymORZBhxZBxkZAvW9tELHJOVIszdBrwG52Jbz1aMpLBEUL8RCcHZC1qkZCskaGkDZBNxMPf8zwTXQOFetZCsyZCkZC5VAEZCDkwCsW7bIQVcHOXMQ6GxsUS4a9Rc97BV26INZBAGK146HZAUIKlNZCqejML5ND7cZD"
 	HerpDerpGroupID = "208678979226870"
 	GoTimeLayout    = "2006-01-02T15:04:05+0000"
 )
 
-func handle_error(msg string, err error, exit bool) {
+func HandleError(msg string, err error, exit bool) {
 	if err != nil {
 		fmt.Println(msg, ":", err)
 
@@ -46,7 +46,7 @@ func GetFBSession() *fb.Session {
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
 	session := globalApp.Session(GetAccessToken())
 	err := session.Validate()
-	handle_error("Error validating session", err, true)
+	HandleError("Error validating session", err, true)
 
 	return session
 }
@@ -60,7 +60,7 @@ func GetUserID() string {
 	res, err := fb.Get("/me", fb.Params{
 		"access_token": myAccessToken,
 	})
-	handle_error("Error when accessing /me", err, true)
+	HandleError("Error when accessing /me", err, true)
 
 	fmt.Println("User associated with access token: ", res)
 
@@ -124,7 +124,7 @@ func GetStartTime() time.Time {
 	// HDM golang template       Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
 	value := "2016-01-01T00:00:00+0000"
 	t, err := time.Parse(GoTimeLayout, value)
-	handle_error("Could not parse start time", err, true)
+	HandleError("Could not parse start time", err, true)
 	return t
 }
 
@@ -150,28 +150,36 @@ func setupDatabase() {
 func getFBData() {
 	var session = GetFBSession()
 	// _, err := GetFBContenders(session)
-	// handle_error("Error getting FBContenders", err, true)
+	// HandleError("Error getting FBContenders", err, true)
 	_, err := GetFBPosts(GetStartTime(), session)
-	handle_error("Error getting FBPosts", err, true)
+	HandleError("Error getting FBPosts", err, true)
 
 	// db := GetDBHandle()
 	// contenders, err := GetHDMContenders(db)
-	// handle_error("issue getting hdm contdenders", err, true)
+	// HandleError("issue getting hdm contdenders", err, true)
 	// fmt.Println("Number of Contenders:", len(contenders))
 }
 
 func main() {
-	log.Println("hdm Madness")
+	log.Println("Welcome to the HerpDerp Madness service")
+	log.Println()
+
+	// Parse the config
+	config := NewConfig()
+
+	// Print the config
+	log.Printf("Facebook group Id:\t%d\t\n", config.FbGroupId)
+	log.Println()
 
 	// setupDatabase()
 	// UpdateHDMContenderDependentData()
 
-	// db := GetDBHandle()
-	// bracket, _ := GetHDMBracket(db, 1)
-	// log.Printf("Bracket %+v", bracket)
-
-	// CreateFirstRoundMatchups()
-
-	http.HandleFunc("/bracketData/", bracketDataHandler)
-	http.ListenAndServe(":8080", nil)
+	//db := GetDBHandle()
+	//bracket, _ := GetHDMBracket(db, 1)
+	//log.Printf("Bracket %+v", bracket)
+	//
+	//CreateFirstRoundMatchups()
+	//
+	//http.HandleFunc("/bracketData/", bracketDataHandler)
+	//http.ListenAndServe(":8080", nil)
 }
