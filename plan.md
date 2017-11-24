@@ -61,7 +61,6 @@
 
 # main
 * read config file
-* instantiate DB tables
 * Create Contenders
 * Create Posts
 * Update Contender Variable data

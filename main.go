@@ -74,12 +74,12 @@ func GetGroupID() string {
 	return groupID
 }
 
-// GetDBHandle returns an active handle to the sqlite db
-func GetDBHandle() *sql.DB {
-	var dbPath = "hdm_dm.db"
+// GetDBHandle opens a connection and returns an active handle to the sqlite db
+func GetDBHandle(c *Config) *sql.DB {
+	//var dbPath = "data.db"
 
 	// sqlite setup and verification
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", c.DbPath)
 	if err != nil {
 		panic(fmt.Sprintf("Error when opening sqlite3: %s", err))
 	}
@@ -128,38 +128,6 @@ func GetStartTime() time.Time {
 	return t
 }
 
-func setupDatabase() {
-	db := GetDBHandle()
-
-	// err := CreateContenderTable(db)
-	// if err != nil {
-	// 	log.Println("Failed to create contenders table:", err)
-	// 	return
-	// }
-
-	// err = CreatePostsTable(GetStartTime(), db)
-	// if err != nil {
-	// 	log.Println("Failed to create posts table:", err)
-	// 	return
-	// }
-
-	// bracket tables
-	_ = CreateBracketsTable(db)
-}
-
-func getFBData() {
-	var session = GetFBSession()
-	// _, err := GetFBContenders(session)
-	// HandleError("Error getting FBContenders", err, true)
-	_, err := GetFBPosts(GetStartTime(), session)
-	HandleError("Error getting FBPosts", err, true)
-
-	// db := GetDBHandle()
-	// contenders, err := GetHDMContenders(db)
-	// HandleError("issue getting hdm contdenders", err, true)
-	// fmt.Println("Number of Contenders:", len(contenders))
-}
-
 func main() {
 	log.Println("Welcome to the HerpDerp Madness service")
 	log.Println()
@@ -168,18 +136,18 @@ func main() {
 	config := NewConfig()
 
 	// Print the config
-	log.Printf("Facebook group Id:\t%d\t\n", config.FbGroupId)
+	log.Printf("Facebook Access Token:\t%d\n", config.FbAccessToken)
+	log.Printf("Facebook Group Id:\t%d\n", config.FbGroupId)
+	log.Printf("Database:\t%s\n", config.DbPath)
 	log.Println()
 
-	// setupDatabase()
-	// UpdateHDMContenderDependentData()
+	// Create db handle
+	db := GetDBHandle(config)
 
-	//db := GetDBHandle()
-	//bracket, _ := GetHDMBracket(db, 1)
-	//log.Printf("Bracket %+v", bracket)
-	//
-	//CreateFirstRoundMatchups()
-	//
-	//http.HandleFunc("/bracketData/", bracketDataHandler)
-	//http.ListenAndServe(":8080", nil)
+	// Register http handlers
+	cc := &ContenderController{db: db}
+	http.Handle(cc.Path(), cc)
+
+	http.HandleFunc("/bracketData/", bracketDataHandler)
+	http.ListenAndServe(":8080", nil)
 }

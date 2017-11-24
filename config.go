@@ -11,11 +11,11 @@ type Config struct {
 	BracketName   string
 	StartTime     time.Time
 	EndTime       time.Time
-	FbGroupId     int `json:"fb_group_id"`
-	FbAccessToken string
+	FbGroupId     int    `json:"fb_group_id"`
+	FbAccessToken string `json:"fb_access_token"`
 	FbSession     string
 	FbUserId      int
-	DbPath        string
+	DbPath        string `json:"db_path"`
 	Port          int
 }
 
@@ -32,7 +32,7 @@ func NewConfig() *Config {
 	// Get the config file path. Defaults to `$GOPATH/src/github.com/JoeSelvik/hdm-service/config.json`
 	configFilePath := os.Getenv("HDMSVC_CONFIG_FILE")
 	if configFilePath == "" {
-		configFilePath = "$GOPATH/src/github.com/JoeSelvik/hdm-service/config.json"
+		configFilePath = "$GOPATH/src/github.com/JoeSelvik/hdm-service/config.json" // todo: change
 	}
 
 	// Expand environment variables in the config file path
@@ -57,7 +57,13 @@ func NewConfig() *Config {
 
 	// Panic over unset, required config variables
 	if config.FbGroupId == 0 {
-		panic("FbGroupId is not set")
+		panic("fb_group_id is not set")
+	}
+	if config.FbAccessToken == "" {
+		panic("fb_access_token is not set")
+	}
+	if config.DbPath == "" {
+		panic("db_path is not set")
 	}
 
 	return config

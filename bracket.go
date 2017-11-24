@@ -170,8 +170,9 @@ func GenerateInitialBracket() (*Bracket, error) {
 func CreateInitialTeams() (*[]TeamPair, error) {
 	log.Println("Creating initial teams")
 
-	db := GetDBHandle()
-	contenders, _ := GetHDMContenders(db)
+	//db := GetDBHandle(NewConfig())
+	//contenders, _ := GetHDMContenders(db)
+	var contenders map[int]*Contender
 
 	// seedContenders
 	sortedContenders := make(contenderSlice, 0, len(contenders))

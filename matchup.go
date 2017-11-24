@@ -36,7 +36,7 @@ func (m *Matchup) Path() string {
 
 // Places 32 Matchups into DB with InProgress set to true
 func CreateFirstRoundMatchups() {
-	db := GetDBHandle()
+	db := GetDBHandle(NewConfig())
 	bracket, _ := GetHDMBracket(db, 1)
 
 	matchups := make(map[string]*Matchup)

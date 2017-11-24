@@ -1,6 +1,5 @@
 # Contenders
-* Id int                          --> INTEGER
-* Created/UpdatedTime *time.Time  --> DATETIME
+* FbId int                        --> INTEGER
 * FbGroupId int                   --> INTEGER
 * Name string                     --> TEXT
 * TotalPosts []int                --> BLOB, vd
@@ -8,11 +7,13 @@
 * TotalLikesReceived int          --> INTEGER, vd
 * TotalLikesGiven int             --> INTEGER, vd
 * PostsUsed []int                 --> BLOB, vd
+* CreatedAt *time.Time            --> DATETIME
+* UpdatedAt *time.Time            --> DATETIME
 
 
 # Posts
-* Id int                          --> INTEGER
-* Created/UpdatedTime *time.Time  --> DATETIME
+* FbId int                        --> INTEGER
+* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * FbGroupId int                   --> INTEGER
 * PostedDate *time.Time           --> DATETIME
 * Author string                   --> TEXT
@@ -21,7 +22,7 @@
 
 # Brackets
 * Id int                          --> INTEGER
-* Created/UpdatedTime *time.Time  --> DATETIME
+* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * FbGroupId int                   --> INTEGER
 * StartTime *time.Time            --> DATETIME
 * EndTime *time.Time              --> DATETIME
@@ -31,7 +32,7 @@
 
 # Matchups
 * Id int                          --> INTEGER
-* Created/UpdatedTime *time.Time  --> DATETIME
+* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * BracketId int                   --> INTEGER
 * Name string                     --> TEXT  // determins round?
 * ContenderAId int                --> INTEGER
