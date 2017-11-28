@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	fb "github.com/huandu/facebook"
 	"log"
 	"time"
 )
@@ -96,7 +95,7 @@ func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
 	q := `UPDATE contenders SET TotalPosts = ?, TotalLikesReceived = ?, AvgLikesPerPost = ?, TotalLikesGiven = ?, UpdatedAt = CURRENT_TIMESTAMP WHERE Id = ?`
 	result, err := tx.Exec(q, posts, c.TotalLikesReceived, c.AvgLikesPerPost, c.TotalLikesGiven, c.FbId)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to update %s's row: %v", c.Name, err))
+		log.Println(fmt.Sprintf("Failed to update %s's row: %v", c.Name, err))
 		return 0, err
 	}
 
@@ -203,7 +202,7 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 		log.Printf(fmt.Sprintf("No user with that Name, %s.", name))
 		return nil, err
 	case err != nil:
-		log.Fatal(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
+		log.Println(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
 		return nil, err
 	default:
 		var posts []int
@@ -221,52 +220,4 @@ func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
 		}
 		return c, nil
 	}
-}
-
-// GetFBContenders returns a slice of Contenders for a given *Session from a FB group
-func GetFBContenders(session *fb.Session) ([]Contender, error) {
-	// response is a map[string]interface{}
-	response, err := fb.Get(fmt.Sprintf("/%s/members", GetGroupID()), fb.Params{
-		"access_token": GetAccessToken(),
-		"feilds":       []string{"name", "id", "picture", "context", "cover"},
-	})
-	if err != nil {
-		log.Fatal("Error requesting group members")
-		return nil, err
-	}
-
-	// Get the member's paging object
-	paging, err := response.Paging(session)
-	if err != nil {
-		log.Fatal("Error generating the member response Paging object")
-		return nil, err
-	}
-
-	var contenders []Contender
-
-	for {
-		results := paging.Data()
-
-		// map[administrator:false name:Jacob Glowacki id:1822807864675176]
-		for i := 0; i < len(results); i++ {
-			var c Contender
-			facebookContender := fb.Result(results[i]) // cast the var
-			c.FbId = facebookContender.Get("id").(int) // todo: int cast needed?
-			c.Name = facebookContender.Get("name").(string)
-
-			contenders = append(contenders, c)
-		}
-
-		noMore, err := paging.Next()
-		if err != nil {
-			log.Fatal("Error accessing Response page's Next object")
-			return nil, err
-		}
-		if noMore {
-			break
-		}
-	}
-
-	log.Println("Number of FB Contenders:", len(contenders))
-	return contenders, nil
 }

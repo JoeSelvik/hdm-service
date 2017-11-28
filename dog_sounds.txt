@@ -1,0 +1,8 @@
+ruff
+woof
+arf
+bark
+aroof
+bow-wow
+aaaoooooo
+yip

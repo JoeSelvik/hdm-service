@@ -76,21 +76,13 @@
 
 
 # START
-* config and main files
-
-# Next work
-* in posts.go, write GetHDMPostsByContenderUsername to be used in matchups.go's CreateFirstRoundMatchups
-* clean up todo's in CreateFirstRoundMatchups
-* in matchups.go write '(c *Contender) CreateMatchup' and CreateMatchupsTable
-* write GetHDMMatchup - follow posts or contenders verisons
-* How to keep result score hidden until round ends?
-* write EndFirstRoundMatchups()
-* FB speak method in main instead of listing all contenders
-* clean up main, only main calls GetDBHandle?
-* error handling
-* add an int totalposts to contenders table for convenience and exploratory work
+* factor our handle error and get db handle?
+* Create ContenderController
+* copy scoob application error system?
 
 # HDM Qs
+* should facebook_controller panic or return error? conform to resource paradigm?
+* add an int totalposts to contenders table for convenience and exploratory work?
 * where to get and store a Post's permalink_url?
 * move create table methods to own sql file?
 * should I be using UNIQUE in my tables? does this show up with .schema?

@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
+	"net/http"
 	"sort"
 	"time"
 )
@@ -344,7 +344,7 @@ func GetHDMBracket(db *sql.DB, x int) (*Bracket, error) {
 
 	err := db.QueryRow("SELECT * FROM brackets WHERE Id=?", x).Scan(&id, &strTeams, &strResults, &createdAt, &updatedAt)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to scan bracket from table: %v", err))
+		log.Println("Failed to scan bracket from Brackets table:", err)
 		return nil, err
 	}
 
@@ -523,4 +523,21 @@ func FullBracketExample() Bracket {
 
 	// return Bracket{666, teams, results, time.Now(), time.Now()}
 	return Bracket{}
+}
+
+// example on how to serve a bracket from hdm db
+func bracketDataHandler(w http.ResponseWriter, r *http.Request) {
+	bracket, _ := GenerateInitialBracket()
+
+	bracketJS := bracket.serialize()
+
+	// bundle up JSBracket for transport!
+	js, err := json.Marshal(bracketJS)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
