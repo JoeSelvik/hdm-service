@@ -76,6 +76,7 @@
 
 
 # START
+* set git upstream branch?
 * factor our handle error and get db handle?
 * Create ContenderController
 * copy scoob application error system?
