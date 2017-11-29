@@ -3,6 +3,7 @@ package main
 import (
 	// "database/sql"
 	// "encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -36,7 +37,9 @@ func (m *Matchup) Path() string {
 
 // Places 32 Matchups into DB with InProgress set to true
 func CreateFirstRoundMatchups() {
-	db := GetDBHandle(NewConfig())
+	// todo: use contender_controller.db
+	var db *sql.DB
+
 	bracket, _ := GetHDMBracket(db, 1)
 
 	matchups := make(map[string]*Matchup)
@@ -74,27 +77,3 @@ func CreateFirstRoundMatchups() {
 		log.Println(fmt.Sprintf("Matchup %s: %+v", key, matchup))
 	}
 }
-
-// Updates 32 Matchups in DB to InProgress false
-func EndFirstRoundMatchups() {
-
-}
-
-// todo: how to get all teamPairs in second round?
-func CreateSecondRoundMatchups() {
-
-}
-
-// GetHDMMatchup pulls any matchup from the DB and returns data needed to render matchupView
-//
-// name == firstRound_31
-// func GetHDMMatchup(name string) *Matchup {
-// 	db := GetDBHandle()
-// 	bracket, _ := GetHDMBracket(db, 1)
-
-// 	var id string
-// 	var contenderA Contender
-// 	var aPosts string
-
-// 	m := Matchup{}
-// }

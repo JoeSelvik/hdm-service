@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
@@ -114,9 +115,15 @@ func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
 // Contender's TotalLikesGiven. A transaction then updates each Contender
 // in the map to be updated.
 func UpdateHDMContenderDependentData() {
-	db := GetDBHandle(NewConfig())
-	posts, err := GetHDMPosts(db)
-	HandleError("Could not get posts", err, true)
+	//posts, err := GetHDMPosts(db)
+	//if err != nil {
+	//	log.Println("Could not get posts from db:", err)
+	//	os.Exit(3)
+	//}
+
+	// todo: use contender_controller.db
+	var db *sql.DB
+	var posts []Post
 
 	// Initialize a map of Contenders to be updated
 	contenders := make(map[string]Contender)
@@ -130,7 +137,7 @@ func UpdateHDMContenderDependentData() {
 		if val, ok := contenders[p.Author]; ok {
 			poster = &val
 		} else {
-			poster, err = GetContenderByUsername(db, p.Author)
+			_, err := GetContenderByUsername(db, p.Author)
 			if err != nil {
 				// if post's author is no longer in the herp, skip it
 				continue
@@ -167,14 +174,18 @@ func UpdateHDMContenderDependentData() {
 
 	// Update every Contender in db that was effected by Posts
 	tx, err := db.Begin()
-	HandleError("Failed to BEGIN txn", err, true)
+	if err != nil {
+		log.Println("Could not begin transaction to update contenders:", err)
+		os.Exit(3)
+	}
 	defer tx.Rollback()
 
 	// key, value: Contender.Id, Contender
 	for _, c := range contenders {
 		_, err := c.UpdateContender(tx)
 		if err != nil {
-			HandleError("Could not update contender", err, true)
+			log.Println("Could not update contender,", err)
+			os.Exit(3)
 		}
 	}
 

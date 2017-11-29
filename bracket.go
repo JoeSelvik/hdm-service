@@ -170,7 +170,6 @@ func GenerateInitialBracket() (*Bracket, error) {
 func CreateInitialTeams() (*[]TeamPair, error) {
 	log.Println("Creating initial teams")
 
-	//db := GetDBHandle(NewConfig())
 	//contenders, _ := GetHDMContenders(db)
 	var contenders map[int]*Contender
 

@@ -76,10 +76,8 @@
 
 
 # START
-* set git upstream branch?
-* factor our handle error and get db handle?
 * Create ContenderController
-* copy scoob application error system?
+* copy scooby application error system?
 
 # HDM Qs
 * should facebook_controller panic or return error? conform to resource paradigm?
