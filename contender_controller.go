@@ -3,13 +3,21 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type ContenderController struct {
 	db *sql.DB
+}
+
+// ServeHTTP routes incoming requests to the right service.
+func (cc *ContenderController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c := new(Contender)
+	ServeResource(w, r, cc, c)
 }
 
 // Path returns the URL extension associated with the Contender resource.
@@ -22,7 +30,15 @@ func (cc *ContenderController) DBTableName() string {
 	return "contenders"
 }
 
-func (cc *ContenderController) Create(c Contender) (int64, error) {
+func (cc *ContenderController) Create(m []Resource) ([]int, error) {
+	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
+	var contenders []*Contender
+	for i := 0; i < len(m); i++ {
+		c := m[i]
+		contenders = append(contenders, c.(*Contender))
+	}
+
+	// Create the SQL query to use
 	// todo: %s and cc.DBTableName() instead?
 	// todo: time.Now() instead of CURRENT_TIMESTAMP?
 	q := `
@@ -32,24 +48,49 @@ func (cc *ContenderController) Create(c Contender) (int64, error) {
 		created_at, updated_at
 	) values (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`
-	result, err := cc.db.Exec(q,
-		c.FbId, c.FbGroupId,
-		c.Name, c.TotalPosts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, c.PostsUsed)
+
+	// Begin sql transaction
+	tx, err := cc.db.Begin()
 	if err != nil {
-		return 0, err
+		log.Println("Failed to begin txn:", err)
+		return nil, err
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
+	defer tx.Rollback()
+
+	// Insert each Contender into contenders table
+	var contenderIds []int
+	for i := 0; i < len(contenders); i++ {
+		c := contenders[i]
+
+		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.TotalPosts), " "), ","), "[]")
+		postsUsed := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.PostsUsed), " "), ","), "[]")
+
+		result, err := tx.Exec(q,
+			c.FbId, c.FbGroupId,
+			c.Name, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed)
+		if err != nil {
+			log.Println("Failed to exec query when inserting contender:")
+			fmt.Printf("%+v\n", c)
+			log.Println("Error:", err)
+			return nil, err
+		}
+
+		// Save each Id to return
+		id, err := result.LastInsertId()
+		if err != nil {
+			log.Println("Failed to get LastInsertedId:", err)
+			return nil, err
+		}
+		contenderIds = append(contenderIds, int(id))
 	}
 
-	return id, nil
-}
+	// Commit sql transaction
+	if err = tx.Commit(); err != nil {
+		log.Println("Failed to Commit txn:", err)
+		return nil, err
+	}
 
-// ServeHTTP routes incoming requests to the right service.
-func (cc *ContenderController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := new(Contender)
-	ServeResource(w, r, cc, c)
+	return contenderIds, nil
 }
 
 // ReadCollection will display all the users. This might be restricted to Admin only later.
@@ -103,4 +144,34 @@ func (cc *ContenderController) ReadCollection(m Resource) (*[]Resource, error) {
 	}
 
 	return &contenders, nil
+}
+
+// /////
+// Non API calls
+// todo: does this belong?
+// /////
+
+func (cc *ContenderController) PopulateContendersTable() error {
+	log.Println("Attempting to create Contenders")
+
+	// Convert contender struct pointers into a slice of Resource interfaces
+	contenders, err := PullContendersFromFb()
+	contenderResources := make([]Resource, len(contenders))
+	for i, v := range contenders {
+		contenderResources[i] = Resource(v)
+	}
+
+	if err != nil {
+		log.Println("Failed to get Contenders from fb:", err)
+		return err
+	}
+
+	_, err = cc.Create(contenderResources)
+	if err != nil {
+		log.Println("Failed to create Contenders from FB:", err)
+		return err
+	}
+
+	log.Println("Successfully created Contenders")
+	return nil
 }

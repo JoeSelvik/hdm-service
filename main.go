@@ -40,7 +40,8 @@ func main() {
 	if err != nil {
 		panic("Couldn't get Facebook contenders")
 	}
-	log.Println(con)
+	log.Println("found contenders:", len(con))
+	log.Println(con[0])
 
 	//posts, err := PullPostsFromFb(Config.StartTime)
 	//if err != nil {
@@ -52,6 +53,11 @@ func main() {
 	cc := &ContenderController{db: db}
 	http.Handle(cc.Path(), cc)
 
+	//err = cc.PopulateContendersTable()
+	//if err != nil {
+	//	panic(err)
+	//}
+
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
 
@@ -62,8 +68,6 @@ func main() {
 
 // getDBHandle opens a connection and returns an active handle to the sqlite db
 func getDBHandle(c *Configuration) *sql.DB {
-	//var dbPath = "data.db"
-
 	// sqlite setup and verification
 	db, err := sql.Open("sqlite3", c.DbPath)
 	if err != nil {

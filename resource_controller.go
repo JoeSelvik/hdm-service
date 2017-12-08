@@ -4,7 +4,7 @@ type ResourceController interface {
 	Path() string
 	DBTableName() string
 
-	//Create(m Resource) (Resource, error)
+	Create(m []Resource) ([]int, error)
 	//Read(id int, m Resource) (Resource, error)
 	//Update(id int, m Resource) (Resource, error)
 	//Destroy(id int) error

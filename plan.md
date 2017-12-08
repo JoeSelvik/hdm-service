@@ -61,12 +61,27 @@
 
 # main
 * read config file
-* Create Contenders
+
+* CreateContenders()
+  * PullContendersFromFb()
 * Create Posts
-* Update Contender Variable data
-* Create Bracket
-* Create first round matchups
+  * PullPostsFromFb()
+
+* UpdateContendersVariableDependentData()
+  * pc.GetPosts()
+* UpdateContendersIndependantData()
+  * cc.GetContenders()
+
+* CreateBracket()
+  * CreateTeams()
+  * CreateResults()
+  
+* CreateFirstRoundMatchups()
+
 * serve endpoints
+  * http.HandleFunc("/bracket/", bracketViewHandler)
+  * http.HandleFunc("/matchup/", matchupViewHandler)
+  * http.ListenAndServe(":8080", nil)
 
 
 # manual
@@ -76,6 +91,7 @@
 
 
 # START
+* ReadCollection contenders
 * Create ContenderController
 * copy scooby application error system?
 

@@ -24,15 +24,15 @@ func getFbSession() *fb.Session {
 	return session
 }
 
-// PullContendersFromFb returns a slice of Contenders for a given *Session from a FB group
-func PullContendersFromFb() ([]Contender, error) {
+// PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
+func PullContendersFromFb() ([]*Contender, error) {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%d/members", Config.FbGroupId), fb.Params{
 		"access_token": Config.FbAccessToken,
 		"fields":       []string{"name", "id"},
 	})
 	if err != nil {
-		log.Println("Failed to get group members:", err)
+		log.Println("Failed to get group members from fb:", err)
 		return nil, err
 	}
 
@@ -44,8 +44,7 @@ func PullContendersFromFb() ([]Contender, error) {
 		return nil, err
 	}
 
-	var contenders []Contender
-
+	var contenders []*Contender
 	for {
 		results := paging.Data()
 
@@ -63,7 +62,7 @@ func PullContendersFromFb() ([]Contender, error) {
 
 			c.FbId = id
 			c.Name = facebookContender.Get("name").(string)
-			contenders = append(contenders, c)
+			contenders = append(contenders, &c)
 		}
 
 		noMore, err := paging.Next()
