@@ -94,23 +94,25 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 	return contenderIds, nil
 }
 
-//func (cc *ContenderController) Read(fbId int) (Resource, error) {
-//	log.Println("Read: Contender ", id)
-//
-//	// Grab contender entry from table
-//	rows, err := cc.db.Query("SELECT * FROM contenders WHERE fb_id=?", fbId)
-//	if err != nil {
-//		log.Println("Failed to query db:", err)
-//		return nil, err
-//	}
-//	defer rows.Close()
-//
-//	if rows.
-//
-//	// Create Contender
-//	var c Contender
-//
-//}
+func (cc *ContenderController) Read(fbId int) (Resource, error) {
+	log.Println("Read: Contender ", fbId)
+
+	// Grab contender entry from table
+	q := fmt.Sprintf("SELECT * FROM contenders WHERE fb_id=%d", fbId)
+	err := cc.db.QueryRow(q).Scan() // todo: unscan things here
+	switch {
+	case err == sql.ErrNoRows:
+		log.Println("Failed to find contender by id ", fbId) // 400-ish err
+		return nil, err
+	case err != nil:
+		log.Println("Failed to query db:", err) // 500-ish err
+		return nil, err
+	}
+
+	// Create Contender
+	var c Contender
+
+}
 
 // ReadCollection will display all the users. This might be restricted to Admin only later.
 func (cc *ContenderController) ReadCollection() ([]Resource, error) {

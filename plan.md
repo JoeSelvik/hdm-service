@@ -91,6 +91,7 @@
 
 
 # START
+* cc.Read where to scan values into
 * Create ContenderController
 * copy scooby application error system?
 * clean Sprintf vs log.Println
