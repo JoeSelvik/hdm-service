@@ -9,7 +9,7 @@ import (
 func ServeResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m Resource) {
 	switch r.Method {
 	case "GET":
-		res, err := rc.ReadCollection(m)
+		res, err := rc.ReadCollection()
 		if err != nil {
 			HTTPError(w, r, err)
 		}

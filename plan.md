@@ -91,9 +91,10 @@
 
 
 # START
-* ReadCollection contenders
 * Create ContenderController
 * copy scooby application error system?
+* clean Sprintf vs log.Println
+* address todo's
 
 # HDM Qs
 * should facebook_controller panic or return error? conform to resource paradigm?

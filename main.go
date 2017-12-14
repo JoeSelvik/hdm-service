@@ -36,12 +36,12 @@ func main() {
 	// Create db handle
 	db := getDBHandle(Config)
 
-	con, err := PullContendersFromFb()
-	if err != nil {
-		panic("Couldn't get Facebook contenders")
-	}
-	log.Println("found contenders:", len(con))
-	log.Println(con[0])
+	//con, err := PullContendersFromFb()
+	//if err != nil {
+	//	panic("Couldn't get Facebook contenders")
+	//}
+	//log.Println("found contenders:", len(con))
+	//log.Println(con[0])
 
 	//posts, err := PullPostsFromFb(Config.StartTime)
 	//if err != nil {
@@ -56,6 +56,15 @@ func main() {
 	//err = cc.PopulateContendersTable()
 	//if err != nil {
 	//	panic(err)
+	//}
+
+	//contenders, err := cc.ReadCollection()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//log.Println("contenders:", contenders)
+	//for _, v := range contenders {
+	//	log.Println(fmt.Sprintf("%+v", v))
 	//}
 
 	// Register speak handle
