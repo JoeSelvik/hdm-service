@@ -67,6 +67,12 @@ func main() {
 	//	log.Println(fmt.Sprintf("%+v", v))
 	//}
 
+	c, err := cc.Read(10152076511328715)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(fmt.Sprintf("%+v", c))
+
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
 

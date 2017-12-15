@@ -63,6 +63,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 		c := contenders[i]
 
 		// todo: abstract this to a helper?
+		// https://stackoverflow.com/questions/37532255/one-liner-to-transform-int-into-string/37533144
 		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.TotalPosts), " "), ","), "[]")
 		postsUsed := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.PostsUsed), " "), ","), "[]")
 
@@ -97,9 +98,21 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 func (cc *ContenderController) Read(fbId int) (Resource, error) {
 	log.Println("Read: Contender ", fbId)
 
+	// todo: better way to shorten line of code and reuse in ReadCollection?
+	var fbGroupId int
+	var name string
+	var totalPostsString string
+	var avgLikesPerPost int
+	var totalLikesReceived int
+	var totalLikesGiven int
+	var postsUsedString string
+	var createdAt time.Time
+	var updatedAt time.Time
+
 	// Grab contender entry from table
 	q := fmt.Sprintf("SELECT * FROM contenders WHERE fb_id=%d", fbId)
-	err := cc.db.QueryRow(q).Scan() // todo: unscan things here
+	err := cc.db.QueryRow(q).Scan(&fbId, &fbGroupId, &name, &totalPostsString, &avgLikesPerPost, &totalLikesReceived,
+		&totalLikesGiven, &postsUsedString, &createdAt, &updatedAt) // todo: okay to unscan into fbId arg?
 	switch {
 	case err == sql.ErrNoRows:
 		log.Println("Failed to find contender by id ", fbId) // 400-ish err
@@ -109,9 +122,34 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 		return nil, err
 	}
 
-	// Create Contender
-	var c Contender
+	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
+	// Split comma separated strings to slices of ints
+	totalPosts, err := stringPostsToInts(totalPostsString)
+	if err != nil {
+		log.Println("Failed to convert total_posts to a slice of ints")
+		return nil, err
+	}
+	postsUsed, err := stringPostsToInts(postsUsedString)
+	if err != nil {
+		log.Println("Failed to convert posts_used to a slice of ints")
+		return nil, err
+	}
 
+	// Create Contender
+	c := Contender{
+		FbId:               fbId,
+		FbGroupId:          fbGroupId,
+		Name:               name,
+		TotalPosts:         totalPosts,
+		AvgLikesPerPost:    avgLikesPerPost,
+		TotalLikesReceived: totalLikesReceived,
+		TotalLikesGiven:    totalLikesGiven,
+		PostsUsed:          postsUsed,
+		CreatedAt:          createdAt,
+		UpdatedAt:          updatedAt,
+	}
+
+	return &c, nil
 }
 
 // ReadCollection will display all the users. This might be restricted to Admin only later.
@@ -148,24 +186,15 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 		}
 
 		// Split comma separated strings to slices of ints
-		totalPostsStringSlice := strings.Split(totalPostsString, ",")
-		var totalPosts []int
-		if totalPostsStringSlice[0] != "" {
-			totalPosts = make([]int, len(totalPostsStringSlice))
-			for i, v := range totalPostsStringSlice {
-				s, _ := strconv.Atoi(v)
-				totalPosts[i] = s
-			}
+		totalPosts, err := stringPostsToInts(totalPostsString)
+		if err != nil {
+			log.Println("Failed to convert total_posts to a slice of ints")
+			return nil, err
 		}
-
-		postsUsedStringSlice := strings.Split(postsUsedString, ",")
-		var postsUsed []int
-		if postsUsedStringSlice[0] != "" {
-			postsUsed = make([]int, len(postsUsedStringSlice))
-			for i, v := range totalPostsStringSlice {
-				s, _ := strconv.Atoi(v)
-				postsUsed[i] = s
-			}
+		postsUsed, err := stringPostsToInts(postsUsedString)
+		if err != nil {
+			log.Println("Failed to convert posts_used to a slice of ints")
+			return nil, err
 		}
 
 		c := Contender{
@@ -215,4 +244,22 @@ func (cc *ContenderController) PopulateContendersTable() error {
 
 	log.Println("Successfully created Contenders")
 	return nil
+}
+
+// stringPostsToInts is a helper function that converts a string of ints to a slice of ints.
+func stringPostsToInts(s string) ([]int, error) {
+	stringSlice := strings.Split(s, ",")
+	var intSlice []int
+	if stringSlice[0] != "" {
+		intSlice = make([]int, len(stringSlice))
+		for i, v := range stringSlice {
+			s, err := strconv.Atoi(v)
+			if err != nil {
+				log.Println("Failed to convert string of ints to slice:", err)
+				return nil, err
+			}
+			intSlice[i] = s
+		}
+	}
+	return intSlice, nil
 }

@@ -55,37 +55,6 @@ func (c contenderSlice) Less(i, j int) bool {
 	return c[i].AvgLikesPerPost > c[j].AvgLikesPerPost
 }
 
-// CreateContender places the Contender into the contenders table
-func (c *Contender) CreateContender(tx *sql.Tx) (int64, error) {
-	q := `
-	INSERT INTO contenders (
-		fb_id,
-		Name,
-		TotalPosts,
-		TotalLikesReceived,
-		AvgLikesPerPost,
-		TotalLikesGiven,
-		CreatedAt,
-		UpdatedAt
-	) values (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-	`
-	posts, err := json.Marshal(c.TotalPosts)
-	if err != nil {
-		return 0, err
-	}
-
-	result, err := tx.Exec(q, c.FbId, c.Name, posts, c.TotalLikesReceived, c.AvgLikesPerPost, c.TotalLikesGiven)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
-}
-
 // UpdateContender updates the dependent data fields and updatedAt on the contender's db row
 func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
 	posts, err := json.Marshal(c.TotalPosts)
@@ -137,11 +106,11 @@ func UpdateHDMContenderDependentData() {
 		if val, ok := contenders[p.Author]; ok {
 			poster = &val
 		} else {
-			_, err := GetContenderByUsername(db, p.Author)
-			if err != nil {
-				// if post's author is no longer in the herp, skip it
-				continue
-			}
+			//_, err := GetContenderByUsername(db, p.Author)
+			//if err != nil {
+			//	// if post's author is no longer in the herp, skip it
+			//	continue
+			//}
 		}
 
 		// Update Contender's data fields with Post data
@@ -160,7 +129,7 @@ func UpdateHDMContenderDependentData() {
 			if val, ok := contenders[p.Likes.Data[j].Name]; ok {
 				liker = &val
 			} else {
-				liker, _ = GetContenderByUsername(db, p.Likes.Data[j].Name)
+				//liker, _ = GetContenderByUsername(db, p.Likes.Data[j].Name)
 			}
 
 			// only update likes given for those in the herp
@@ -193,42 +162,4 @@ func UpdateHDMContenderDependentData() {
 		log.Println("Failed to COMMIT txn:", err)
 	}
 	log.Println("Updated Contender dependent data")
-}
-
-// GetContenderByUsername returns a pointer to the Contender witht he provided name.
-func GetContenderByUsername(db *sql.DB, name string) (*Contender, error) {
-	q := "SELECT * FROM contenders WHERE name = ?"
-	var id int
-	var totalPosts string // sqlite blob later to be unmarshalled
-	var totalLikesReceived int
-	var avgLikesPerPost int
-	var totalLikesGiven int
-	var createdAt time.Time
-	var updatedAt time.Time
-
-	// todo: is this bad overwritting name?
-	err := db.QueryRow(q, name).Scan(&id, &name, &totalPosts, &totalLikesReceived, &avgLikesPerPost, &totalLikesGiven, &createdAt, &updatedAt)
-	switch {
-	case err == sql.ErrNoRows:
-		log.Printf(fmt.Sprintf("No user with that Name, %s.", name))
-		return nil, err
-	case err != nil:
-		log.Println(fmt.Sprintf("Error getting %s from contenders table %s", name, err))
-		return nil, err
-	default:
-		var posts []int
-		json.Unmarshal([]byte(totalPosts), &posts)
-
-		c := &Contender{
-			FbId:               id,
-			Name:               name,
-			TotalPosts:         posts,
-			TotalLikesReceived: totalLikesReceived,
-			AvgLikesPerPost:    avgLikesPerPost,
-			TotalLikesGiven:    totalLikesGiven,
-			CreatedAt:          createdAt,
-			UpdatedAt:          updatedAt,
-		}
-		return c, nil
-	}
 }

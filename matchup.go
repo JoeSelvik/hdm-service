@@ -48,10 +48,10 @@ func CreateFirstRoundMatchups() {
 		name := bracket.Results.FirstRound[i][2].(string)
 		log.Println("Creating Matchup: ", name)
 
-		teams := bracket.Teams[i]
+		//teams := bracket.Teams[i]
 		// todo: bye's print No user with that name message, create a finished Matchup
-		contenderA, _ := GetContenderByUsername(db, teams.ContenderAName)
-		contenderB, _ := GetContenderByUsername(db, teams.ContenderBName)
+		//contenderA, _ := GetContenderByUsername(db, teams.ContenderAName)
+		//contenderB, _ := GetContenderByUsername(db, teams.ContenderBName)
 
 		// Get five random posts for each contender
 		// todo: mark these posts as used?
@@ -60,10 +60,10 @@ func CreateFirstRoundMatchups() {
 
 		m := Matchup{
 			Name:       name,
-			ContenderA: contenderA,
+			ContenderA: nil,
 			APosts:     []string{"permalink_url1", "permalink_url2"},
 			AVotes:     0,
-			ContenderB: contenderB,
+			ContenderB: nil,
 			BPosts:     []string{"permalink_url1", "permalink_url2"},
 			BVotes:     0,
 			InProgress: true,
