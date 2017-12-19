@@ -30,6 +30,7 @@ func (cc *ContenderController) DBTableName() string {
 	return "contenders"
 }
 
+// Create writes a new contender to the db for each given Resource.
 func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
@@ -64,17 +65,14 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 	for i := 0; i < len(contenders); i++ {
 		c := contenders[i]
 
-		// todo: abstract this to a helper? and others
-		// https://stackoverflow.com/questions/37532255/one-liner-to-transform-int-into-string/37533144
-		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.TotalPosts), " "), ","), "[]")
-		postsUsed := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.PostsUsed), " "), ","), "[]")
+		posts := slicePostIdsToStringPosts(c.TotalPosts)
+		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
 
 		result, err := tx.Exec(q,
 			c.FbId, c.FbGroupId,
 			c.Name, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed)
 		if err != nil {
-			log.Println("Failed to exec query when inserting contender:")
-			fmt.Printf("%+v\n", c)
+			log.Printf("Failed to exec query when inserting contender:\n%+v\n", c)
 			log.Println("Error:", err)
 			return nil, err
 		}
@@ -97,6 +95,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 	return contenderIds, nil
 }
 
+// Read returns the contender in the db for a given FbId.
 func (cc *ContenderController) Read(fbId int) (Resource, error) {
 	log.Println("Read: Contender ", fbId)
 
@@ -126,12 +125,12 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 
 	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
 	// Split comma separated strings to slices of ints
-	totalPosts, err := stringPostsToInts(totalPostsString)
+	totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
 	if err != nil {
 		log.Println("Failed to convert total_posts to a slice of ints")
 		return nil, err
 	}
-	postsUsed, err := stringPostsToInts(postsUsedString)
+	postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
 	if err != nil {
 		log.Println("Failed to convert posts_used to a slice of ints")
 		return nil, err
@@ -154,7 +153,10 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 	return &c, nil
 }
 
+// Update writes the db column value for each variable Contender parameter.
 //
+// Writes TotalPosts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
+// todo: test when fb_id does not exist
 func (cc *ContenderController) Update(m []Resource) error {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
@@ -174,22 +176,19 @@ func (cc *ContenderController) Update(m []Resource) error {
 	// Create the SQL query
 	q := `
 	UPDATE contenders SET
-		total_posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?,
+		total_posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?, posts_used=?,
 		updated_at=CURRENT_TIMESTAMP
 		WHERE fb_id=?
 	`
 
-	//q := fmt.Sprintf("UPDATE contenders SET total_posts=%s, avg_likes_per_post=%d, total_likes_received=%d, " +
-	//	"total_likes_given=%d, updated_at=CURRENT_TIMESTAMP")
+	// Iterate through each contender and update it in the db
+	for _, c := range contenders {
+		posts := slicePostIdsToStringPosts(c.TotalPosts)
+		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
 
-	// Iterate through each contender in the given map and update it
-	for _, v := range contenders {
-		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(v.TotalPosts), " "), ","), "[]")
-
-		_, err := tx.Exec(q, posts, v.AvgLikesPerPost, v.TotalLikesReceived, v.TotalLikesGiven, v.FbId)
+		_, err := tx.Exec(q, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed, c.FbId)
 		if err != nil {
-			log.Println("Failed to exec query when updating contender:")
-			fmt.Printf("%+v\n", v)
+			log.Printf("Failed to exec query when updating contender:\n%+v\n", c)
 			log.Println("Error:", err)
 			return err
 		}
@@ -204,7 +203,7 @@ func (cc *ContenderController) Update(m []Resource) error {
 	return nil
 }
 
-// ReadCollection will display all the users. This might be restricted to Admin only later.
+// ReadCollection returns all Contenders in the db.
 func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 	log.Println("Read collection: Contenders")
 
@@ -238,12 +237,12 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 		}
 
 		// Split comma separated strings to slices of ints
-		totalPosts, err := stringPostsToInts(totalPostsString)
+		totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
 		if err != nil {
 			log.Println("Failed to convert total_posts to a slice of ints")
 			return nil, err
 		}
-		postsUsed, err := stringPostsToInts(postsUsedString)
+		postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
 		if err != nil {
 			log.Println("Failed to convert posts_used to a slice of ints")
 			return nil, err
@@ -269,8 +268,8 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 }
 
 // /////
-// Non API calls
-// todo: does this belong?
+// Non API methods and helper functions
+// todo: does this section belong?
 // /////
 
 func (cc *ContenderController) PopulateContendersTable() error {
@@ -298,10 +297,14 @@ func (cc *ContenderController) PopulateContendersTable() error {
 	return nil
 }
 
-// stringPostsToInts is a helper function that converts a string of ints to a slice of ints.
-func stringPostsToInts(s string) ([]int, error) {
-	// todo: "," and ", " should work
-	stringSlice := strings.Split(s, ",")
+// stringPostsToSlicePostIds is a helper function that converts a string of ints to a slice of ints.
+//
+// "1, 2, 3" to []int{1, 2, 3}
+// "1,2,3" will throw an error
+// returns []int{} if given string is ""
+func stringPostsToSlicePostIds(s string) ([]int, error) {
+	stringSlice := strings.Split(s, ", ")
+
 	var intSlice []int
 	if stringSlice[0] != "" {
 		intSlice = make([]int, len(stringSlice))
@@ -315,4 +318,18 @@ func stringPostsToInts(s string) ([]int, error) {
 		}
 	}
 	return intSlice, nil
+}
+
+// slicePostIdsToStringPosts is a helper function that converts a slice of post ids to a string of ids.
+//
+// todo: recover() from panic()? is this possible?
+// todo: probably a better way to do this...
+// https://stackoverflow.com/questions/25025467/catching-panics-in-golang
+func slicePostIdsToStringPosts(slicePostIds []int) string {
+	stringPosts := fmt.Sprint(slicePostIds)                     // [1 2 3] to "[1 2 3]"
+	splitStringPosts := strings.Split(stringPosts, " ")         // "[1 2 3]" to ["[1 2 3]"]
+	joinedStringPosts := strings.Join(splitStringPosts, ", ")   // ["[1 2 3]"] to "[1, 2, 3]"
+	trimmedStringPosts := strings.Trim(joinedStringPosts, "[]") // "[1, 2, 3]" to "1, 2, 3"
+
+	return trimmedStringPosts
 }

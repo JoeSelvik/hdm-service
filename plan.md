@@ -91,9 +91,7 @@
 
 
 # START
-* clean cc.Update and main test
-* c.AvgLikesPerPost and other ints to floats?
-* ContenderController, UpdateContender
+* ContenderController, Destroy methods
 * copy scooby application error system?
 * clean Sprintf vs log.Println
 * address todo's

@@ -68,33 +68,33 @@ func main() {
 	//}
 	//
 
-	cs := make([]Resource, 2) // allocates length 0 and capacity 2?
-	c0 := contenders[1].(*Contender)
-	c1 := contenders[2].(*Contender)
-	cs[0] = c0
-	cs[1] = c1
-
-	log.Println(fmt.Sprintf("Contender0 pre modification\n%+v\n", c0))
-	log.Println(fmt.Sprintf("Contender1 pre modification\n%+v\n", c1))
-	log.Println("slice pre modification:")
-	for i := range cs {
-		log.Println(fmt.Sprintf("Contenders pre modification\n%+v\n", cs[i]))
-	}
-
-	c0.TotalPosts = []int{1, 1, 1}
-	c1.AvgLikesPerPost = 11
-
-	log.Println(fmt.Sprintf("Contender0 post modification\n%+v\n", c0))
-	log.Println(fmt.Sprintf("Contender1 post modification\n%+v\n", c1))
-	log.Println("slice pre modification:")
-	for _, v := range cs {
-		log.Println(fmt.Sprintf("Contenders post modification\n%+v\n", v))
-	}
-
-	err = cc.Update(cs)
-	if err != nil {
-		panic(err)
-	}
+	//// Test update
+	//cs := make([]Resource, 2) // allocates length 0 and capacity 2?
+	//c0 := contenders[1].(*Contender)
+	//c1 := contenders[2].(*Contender)
+	//cs[0] = c0
+	//cs[1] = c1
+	//
+	//log.Println(fmt.Sprintf("Contender0 pre modification\n%+v\n", c0))
+	//log.Println(fmt.Sprintf("Contender1 pre modification\n%+v\n", c1))
+	//for i := range cs {
+	//	log.Println(fmt.Sprintf("Contenders pre modification\n%+v\n", cs[i]))
+	//}
+	//
+	//c0.TotalPosts = []int{6, 6, 6}
+	//c0.PostsUsed = []int{1, 2, 3}
+	//c1.AvgLikesPerPost = 66
+	//
+	//log.Println(fmt.Sprintf("Contender0 post modification\n%+v\n", c0))
+	//log.Println(fmt.Sprintf("Contender1 post modification\n%+v\n", c1))
+	//for _, v := range cs {
+	//	log.Println(fmt.Sprintf("Contenders post modification\n%+v\n", v))
+	//}
+	//
+	//err = cc.Update(cs)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//c, err := cc.Read(10152076511328715)
 	//if err != nil {
