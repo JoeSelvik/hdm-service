@@ -15,7 +15,7 @@ type Contender struct {
 	FbGroupId          int
 	Name               string
 	TotalPosts         []int
-	AvgLikesPerPost    int
+	AvgLikesPerPost    float64 // todo: or float32?
 	TotalLikesReceived int
 	TotalLikesGiven    int
 	PostsUsed          []int
@@ -120,7 +120,7 @@ func UpdateHDMContenderDependentData() {
 		//	likesReceived = len(posts[poster.TotalPosts[i]].Likes.Data) + likesReceived
 		//}
 		poster.TotalLikesReceived = likesReceived
-		poster.AvgLikesPerPost = poster.TotalLikesReceived / len(poster.TotalPosts)
+		poster.AvgLikesPerPost = float64(poster.TotalLikesReceived / len(poster.TotalPosts))
 		contenders[poster.Name] = *poster
 
 		// For each Post like, give a likes given to the contenders

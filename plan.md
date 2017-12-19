@@ -91,7 +91,9 @@
 
 
 # START
-* Create ContenderController, UpdateContender
+* clean cc.Update and main test
+* c.AvgLikesPerPost and other ints to floats?
+* ContenderController, UpdateContender
 * copy scooby application error system?
 * clean Sprintf vs log.Println
 * address todo's
@@ -104,3 +106,7 @@
 * should I be using UNIQUE in my tables? does this show up with .schema?
 * INSERT with new, INSERT with existing, vs INSERT OR REPLACE INTO
 * should post.PostedDate be a time.Time instead of string
+
+# golang
+* optional arguments, like make() length and capacity arguments
+* slice of structs, slice of struct ptrs, slice of interfaces and modifying. compare to python

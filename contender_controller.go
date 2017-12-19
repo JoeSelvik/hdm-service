@@ -38,9 +38,10 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 		contenders = append(contenders, c.(*Contender))
 	}
 
-	// Create the SQL query to use
+	// Create the SQL query
 	// todo: %s and cc.DBTableName() instead?
 	// todo: time.Now() instead of CURRENT_TIMESTAMP?
+	// todo: check other query statements
 	q := `
 	INSERT INTO contenders (
 		fb_id, fb_group_id,
@@ -59,10 +60,11 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 
 	// Insert each Contender into contenders table
 	var contenderIds []int
+	// todo: use range?
 	for i := 0; i < len(contenders); i++ {
 		c := contenders[i]
 
-		// todo: abstract this to a helper?
+		// todo: abstract this to a helper? and others
 		// https://stackoverflow.com/questions/37532255/one-liner-to-transform-int-into-string/37533144
 		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.TotalPosts), " "), ","), "[]")
 		postsUsed := strings.Trim(strings.Join(strings.Split(fmt.Sprint(c.PostsUsed), " "), ","), "[]")
@@ -102,7 +104,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 	var fbGroupId int
 	var name string
 	var totalPostsString string
-	var avgLikesPerPost int
+	var avgLikesPerPost float64
 	var totalLikesReceived int
 	var totalLikesGiven int
 	var postsUsedString string
@@ -141,7 +143,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 		FbGroupId:          fbGroupId,
 		Name:               name,
 		TotalPosts:         totalPosts,
-		AvgLikesPerPost:    avgLikesPerPost,
+		AvgLikesPerPost:    float64(avgLikesPerPost),
 		TotalLikesReceived: totalLikesReceived,
 		TotalLikesGiven:    totalLikesGiven,
 		PostsUsed:          postsUsed,
@@ -150,6 +152,56 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 	}
 
 	return &c, nil
+}
+
+//
+func (cc *ContenderController) Update(m []Resource) error {
+	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
+	var contenders []*Contender
+	for i := 0; i < len(m); i++ {
+		c := m[i]
+		contenders = append(contenders, c.(*Contender))
+	}
+
+	// Begin sql transaction
+	tx, err := cc.db.Begin()
+	if err != nil {
+		log.Println("Failed to begin txn:", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	// Create the SQL query
+	q := `
+	UPDATE contenders SET
+		total_posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?,
+		updated_at=CURRENT_TIMESTAMP
+		WHERE fb_id=?
+	`
+
+	//q := fmt.Sprintf("UPDATE contenders SET total_posts=%s, avg_likes_per_post=%d, total_likes_received=%d, " +
+	//	"total_likes_given=%d, updated_at=CURRENT_TIMESTAMP")
+
+	// Iterate through each contender in the given map and update it
+	for _, v := range contenders {
+		posts := strings.Trim(strings.Join(strings.Split(fmt.Sprint(v.TotalPosts), " "), ","), "[]")
+
+		_, err := tx.Exec(q, posts, v.AvgLikesPerPost, v.TotalLikesReceived, v.TotalLikesGiven, v.FbId)
+		if err != nil {
+			log.Println("Failed to exec query when updating contender:")
+			fmt.Printf("%+v\n", v)
+			log.Println("Error:", err)
+			return err
+		}
+	}
+
+	// Commit sql transaction
+	if err = tx.Commit(); err != nil {
+		log.Println("Failed to Commit txn:", err)
+		return err
+	}
+
+	return nil
 }
 
 // ReadCollection will display all the users. This might be restricted to Admin only later.
@@ -171,7 +223,7 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 		var fbGroupId int
 		var name string
 		var totalPostsString string
-		var avgLikesPerPost int
+		var avgLikesPerPost float64
 		var totalLikesReceived int
 		var totalLikesGiven int
 		var postsUsedString string
@@ -202,7 +254,7 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 			FbGroupId:          fbGroupId,
 			Name:               name,
 			TotalPosts:         totalPosts,
-			AvgLikesPerPost:    avgLikesPerPost,
+			AvgLikesPerPost:    float64(avgLikesPerPost),
 			TotalLikesReceived: totalLikesReceived,
 			TotalLikesGiven:    totalLikesGiven,
 			PostsUsed:          postsUsed,
@@ -248,6 +300,7 @@ func (cc *ContenderController) PopulateContendersTable() error {
 
 // stringPostsToInts is a helper function that converts a string of ints to a slice of ints.
 func stringPostsToInts(s string) ([]int, error) {
+	// todo: "," and ", " should work
 	stringSlice := strings.Split(s, ",")
 	var intSlice []int
 	if stringSlice[0] != "" {
