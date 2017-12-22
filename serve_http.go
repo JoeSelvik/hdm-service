@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -9,33 +10,33 @@ import (
 func ServeResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m Resource) {
 	switch r.Method {
 	case "GET":
-		res, err := rc.ReadCollection()
-		if err != nil {
-			HTTPError(w, r, err)
+		res, aerr := rc.ReadCollection()
+		if aerr != nil {
+			HTTPError(w, r, aerr)
 		}
 
-		err = HTTPSendJSON(w, res, http.StatusOK)
-		if err != nil {
-			log.Print("Couldn't convert your error to JSON.")
+		aerr = HTTPSendJSON(w, res, http.StatusOK)
+		if aerr != nil {
+			// todo: How to gracefully handle and log server side errors
+			log.Println("Couldn't write back to the client.")
 			return
 		}
 	default:
 		// Unsupported Method, send Allow header back in error response
 		w.Header().Add("Allow", "GET, PUT, DELETE")
-		//msg := fmt.Sprintf("Method \"%s\" is not supported at %s.", r.Method, r.URL.Path)
-		//HTTPError(w, r, &ApplicationError{Msg: msg, Code: http.StatusMethodNotAllowed})
-		// todo: application error with code?
-		HTTPError(w, r, nil)
+		msg := fmt.Sprintf("Method \"%s\" is not supported at %s.", r.Method, r.URL.Path)
+		HTTPError(w, r, &ApplicationError{Msg: msg, Code: http.StatusMethodNotAllowed})
 		return
 	}
 }
 
-// HTTPSendResource will marshal a single given Resource, set the correct status code and send the response.
-func HTTPSendJSON(w http.ResponseWriter, m interface{}, code int) error {
+// HTTPSendResource marshals given Resources, sets the correct status code, and sends the response.
+func HTTPSendJSON(w http.ResponseWriter, m interface{}, code int) *ApplicationError {
 	// MarshalIndent makes sure our JSON is pretty
 	res, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
-		return err
+		msg := "Couldn't format object into JSON"
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusUnsupportedMediaType}
 	}
 
 	// But MarshalIndent doesn't come with a newline, so we do that ourselves.
@@ -47,24 +48,26 @@ func HTTPSendJSON(w http.ResponseWriter, m interface{}, code int) error {
 	// Returned int is number of bytes written, not needed, so ignore
 	_, err = w.Write(res)
 	if err != nil {
-		return err
+		msg := "Couldn't write back to client."
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusUnsupportedMediaType}
 	}
 
 	return nil
 }
 
 // HTTPError returns an application-formatted JSON error object for when bad things happen.
-func HTTPError(w http.ResponseWriter, r *http.Request, e error) {
-	log.Printf("Error: %s\n", error.Error)
+func HTTPError(w http.ResponseWriter, r *http.Request, aerr *ApplicationError) {
+	log.Printf("Error: %s\n", aerr.Error)
 
 	// Marshal the error string to send in our response
-	je, jerr := json.Marshal(e)
+	je, jerr := json.Marshal(aerr)
 	if jerr != nil {
+		// todo: how to handle? Panic? Print more info?
 		log.Println("Couldn't convert your error to JSON.")
 		return
 	}
 
-	w.WriteHeader(400)
+	w.WriteHeader(aerr.Code)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(je)
 }

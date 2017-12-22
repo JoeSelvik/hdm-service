@@ -8,5 +8,5 @@ type ResourceController interface {
 	Read(id int) (Resource, error) // todo: or Read(id int, m Resource) (Resource, error)?
 	Update(m []Resource) error     // todo: return anything?
 	Destroy(ids []int) error       // todo: or destroy collection?
-	ReadCollection() ([]Resource, error)
+	ReadCollection() ([]Resource, *ApplicationError)
 }

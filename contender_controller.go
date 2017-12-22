@@ -254,14 +254,18 @@ func (cc *ContenderController) Destroy(ids []int) error {
 }
 
 // ReadCollection returns all Contenders in the db.
-func (cc *ContenderController) ReadCollection() ([]Resource, error) {
+func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) {
 	log.Println("Read collection: Contenders")
 
 	// Grab contender entries from table
 	rows, err := cc.db.Query("SELECT * FROM contenders")
-	if err != nil {
-		log.Println("Failed to query db:", err)
-		return nil, err
+	switch {
+	case err == sql.ErrNoRows:
+		msg := fmt.Sprintf("None of that kind of resource here!")
+		return nil, &ApplicationError{Msg: msg, Code: http.StatusNoContent}
+	case err != nil:
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 	defer rows.Close()
 
@@ -282,20 +286,20 @@ func (cc *ContenderController) ReadCollection() ([]Resource, error) {
 		err := rows.Scan(&fbId, &fbGroupId, &name, &totalPostsString, &avgLikesPerPost,
 			&totalLikesReceived, &totalLikesGiven, &postsUsedString, &createdAt, &updatedAt)
 		if err != nil {
-			log.Println("Failed to scan rows from db:", err)
-			return nil, err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
 		// Split comma separated strings to slices of ints
 		totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
 		if err != nil {
-			log.Println("Failed to convert total_posts to a slice of ints")
-			return nil, err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 		postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
 		if err != nil {
-			log.Println("Failed to convert posts_used to a slice of ints")
-			return nil, err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
 		c := Contender{

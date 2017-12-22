@@ -2,8 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -53,28 +51,6 @@ func (c contenderSlice) Swap(i, j int) {
 // Less is part of sort.Interface. Use AvgLikesPerPost as the value to sort by
 func (c contenderSlice) Less(i, j int) bool {
 	return c[i].AvgLikesPerPost > c[j].AvgLikesPerPost
-}
-
-// UpdateContender updates the dependent data fields and updatedAt on the contender's db row
-func (c *Contender) UpdateContender(tx *sql.Tx) (int64, error) {
-	posts, err := json.Marshal(c.TotalPosts)
-	if err != nil {
-		return 0, err
-	}
-
-	q := `UPDATE contenders SET TotalPosts = ?, TotalLikesReceived = ?, AvgLikesPerPost = ?, TotalLikesGiven = ?, UpdatedAt = CURRENT_TIMESTAMP WHERE Id = ?`
-	result, err := tx.Exec(q, posts, c.TotalLikesReceived, c.AvgLikesPerPost, c.TotalLikesGiven, c.FbId)
-	if err != nil {
-		log.Println(fmt.Sprintf("Failed to update %s's row: %v", c.Name, err))
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
 }
 
 // UpdateHDMContenderDependentData creates a map of Contenders to update
@@ -149,14 +125,14 @@ func UpdateHDMContenderDependentData() {
 	}
 	defer tx.Rollback()
 
-	// key, value: Contender.Id, Contender
-	for _, c := range contenders {
-		_, err := c.UpdateContender(tx)
-		if err != nil {
-			log.Println("Could not update contender,", err)
-			os.Exit(3)
-		}
-	}
+	//// key, value: Contender.Id, Contender
+	//for _, c := range contenders {
+	//	//_, err := c.UpdateContender(tx)
+	//	if err != nil {
+	//		log.Println("Could not update contender,", err)
+	//		os.Exit(3)
+	//	}
+	//}
 
 	if err = tx.Commit(); err != nil {
 		log.Println("Failed to COMMIT txn:", err)

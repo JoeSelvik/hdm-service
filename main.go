@@ -96,22 +96,22 @@ func main() {
 	//	panic(err)
 	//}
 
-	// Test read and destroy
-	c, err := cc.Read(10205178963326891)
-	if err != nil {
-		panic(err)
-	}
-	log.Println(fmt.Sprintf("%+v", c))
-
-	log.Println("Deleting")
-	cc.Destroy([]int{10205178963326891})
-
-	log.Println("Reading deleted contender")
-	c, err = cc.Read(10205178963326891)
-	if err != nil {
-		panic(err)
-	}
-	log.Println(fmt.Sprintf("%+v", c))
+	//// Test read and destroy
+	//c, err := cc.Read(10205178963326891)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//log.Println(fmt.Sprintf("%+v", c))
+	//
+	//log.Println("Deleting")
+	//cc.Destroy([]int{10205178963326891})
+	//
+	//log.Println("Reading deleted contender")
+	//c, err = cc.Read(10205178963326891)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//log.Println(fmt.Sprintf("%+v", c))
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)

@@ -91,8 +91,8 @@
 
 
 # START
-* ContenderController, Destroy methods
-* copy scooby application error system?
+* copy scooby application error system
+* single and multiple serveHtttp
 * clean Sprintf vs log.Println
 * address todo's
 
