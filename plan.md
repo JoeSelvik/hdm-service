@@ -91,8 +91,6 @@
 
 
 # START
-* copy scooby application error system
-* single and multiple serveHtttp
 * clean Sprintf vs log.Println
 * address todo's
 

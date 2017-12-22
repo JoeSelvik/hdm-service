@@ -31,7 +31,7 @@ func (cc *ContenderController) DBTableName() string {
 }
 
 // Create writes a new contender to the db for each given Resource.
-func (cc *ContenderController) Create(m []Resource) ([]int, error) {
+func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
 	for i := 0; i < len(m); i++ {
@@ -54,8 +54,8 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 	// Begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
-		log.Println("Failed to begin txn:", err)
-		return nil, err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 	defer tx.Rollback()
 
@@ -72,32 +72,31 @@ func (cc *ContenderController) Create(m []Resource) ([]int, error) {
 			c.FbId, c.FbGroupId,
 			c.Name, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed)
 		if err != nil {
-			log.Printf("Failed to exec query when inserting contender:\n%+v\n", c)
-			log.Println("Error:", err)
-			return nil, err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
 		// Save each Id to return
 		id, err := result.LastInsertId()
 		if err != nil {
-			log.Println("Failed to get LastInsertedId:", err)
-			return nil, err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 		contenderIds = append(contenderIds, int(id))
 	}
 
 	// Commit sql transaction
 	if err = tx.Commit(); err != nil {
-		log.Println("Failed to Commit txn:", err)
-		return nil, err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	return contenderIds, nil
 }
 
 // Read returns the contender in the db for a given FbId.
-func (cc *ContenderController) Read(fbId int) (Resource, error) {
-	log.Println("Read: Contender ", fbId)
+func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
+	log.Println("Read: Contender", fbId)
 
 	// todo: better way to shorten line of code and reuse in ReadCollection?
 	var fbGroupId int
@@ -116,24 +115,24 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 		&totalLikesGiven, &postsUsedString, &createdAt, &updatedAt) // todo: okay to unscan into fbId arg?
 	switch {
 	case err == sql.ErrNoRows:
-		log.Println("Failed to find contender by id:", fbId) // 400-ish err
-		return nil, err
+		msg := fmt.Sprintf("Couldn't find any resource with id: %d", fbId)
+		return nil, &ApplicationError{Msg: msg, Code: http.StatusNotFound}
 	case err != nil:
-		log.Println("Failed to query db:", err) // 500-ish err
-		return nil, err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
 	// Split comma separated strings to slices of ints
 	totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
 	if err != nil {
-		log.Println("Failed to convert total_posts to a slice of ints")
-		return nil, err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 	postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
 	if err != nil {
-		log.Println("Failed to convert posts_used to a slice of ints")
-		return nil, err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	// Create Contender
@@ -157,7 +156,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 //
 // Writes TotalPosts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
 // todo: test when fb_id does not exist
-func (cc *ContenderController) Update(m []Resource) error {
+func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
 	for i := 0; i < len(m); i++ {
@@ -168,8 +167,8 @@ func (cc *ContenderController) Update(m []Resource) error {
 	// Begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
-		log.Println("Failed to begin txn:", err)
-		return err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 	defer tx.Rollback()
 
@@ -186,30 +185,47 @@ func (cc *ContenderController) Update(m []Resource) error {
 		posts := slicePostIdsToStringPosts(c.TotalPosts)
 		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
 
-		_, err := tx.Exec(q, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed, c.FbId)
+		res, err := tx.Exec(q, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed, c.FbId)
 		if err != nil {
-			log.Printf("Failed to exec query when updating contender:\n%+v\n", c)
-			log.Println("Error:", err)
-			return err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+
+		// Not really sure what this can error on
+		numrows, err := res.RowsAffected()
+		if err != nil {
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+
+		// If more or less than one row is affected then we have a problem
+		switch {
+		case numrows == 0:
+			msg := fmt.Sprintf("Couldn't find any resource to update with id: %d", c.FbId)
+			return &ApplicationError{Msg: msg, Code: http.StatusNotFound}
+		case numrows != 1:
+			// This is really bad, should never see. May be an SQL injection attempt.
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 	}
 
 	// Commit sql transaction
 	if err = tx.Commit(); err != nil {
-		log.Println("Failed to Commit txn:", err)
-		return err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	return nil
 }
 
-//
-func (cc *ContenderController) Destroy(ids []int) error {
+// Destroy deletes any given Id from the db.
+func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 	// Begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
-		log.Println("Failed to begin txn:", err)
-		return err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 	defer tx.Rollback()
 
@@ -218,36 +234,36 @@ func (cc *ContenderController) Destroy(ids []int) error {
 
 	// Iterate through each contender and update it in the db
 	for _, v := range ids {
+		// todo: a lot of repeated code from update's error handling
 		res, err := tx.Exec(q, v)
 		if err != nil {
-			log.Printf("Failed to exec query when deleting contender ID:\n%d\n", v)
-			log.Println("Error:", err)
-			return err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
 		// Not really sure what this can error on
 		numrows, err := res.RowsAffected()
 		if err != nil {
-			log.Printf("Failed to query rows effected when deleting contender ID:\n%d\n%v", v, err)
-			return err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
 		// If more or less than one row is affected then we have a problem
 		switch {
 		case numrows == 0:
-			log.Printf("Couldn't find and delete contender ID:\n%d\n%v", v, err)
-			return err
+			msg := fmt.Sprintf("Couldn't find any resource to destroy with id: %d", v)
+			return &ApplicationError{Msg: msg, Code: http.StatusNotFound}
 		case numrows != 1:
 			// This is really bad, should never see. May be an SQL injection attempt.
-			log.Printf("Multiple rows effected when deleting single contender id\n%d\n%v", v, err)
-			return err
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 	}
 
 	// Commit sql transaction
 	if err = tx.Commit(); err != nil {
-		log.Println("Failed to Commit txn:", err)
-		return err
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	return nil

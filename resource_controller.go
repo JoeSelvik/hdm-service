@@ -4,9 +4,9 @@ type ResourceController interface {
 	Path() string
 	DBTableName() string
 
-	Create(m []Resource) ([]int, error)
-	Read(id int) (Resource, error) // todo: or Read(id int, m Resource) (Resource, error)?
-	Update(m []Resource) error     // todo: return anything?
-	Destroy(ids []int) error       // todo: or destroy collection?
+	Create(m []Resource) ([]int, *ApplicationError)
+	Read(id int) (Resource, *ApplicationError) // todo: or Read(id int, m Resource) (Resource, error)?
+	Update(m []Resource) *ApplicationError     // todo: return anything?
+	Destroy(ids []int) *ApplicationError       // todo: or destroy collection?
 	ReadCollection() ([]Resource, *ApplicationError)
 }
