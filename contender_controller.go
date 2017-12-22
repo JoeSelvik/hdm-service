@@ -116,7 +116,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, error) {
 		&totalLikesGiven, &postsUsedString, &createdAt, &updatedAt) // todo: okay to unscan into fbId arg?
 	switch {
 	case err == sql.ErrNoRows:
-		log.Println("Failed to find contender by id ", fbId) // 400-ish err
+		log.Println("Failed to find contender by id:", fbId) // 400-ish err
 		return nil, err
 	case err != nil:
 		log.Println("Failed to query db:", err) // 500-ish err
@@ -190,6 +190,56 @@ func (cc *ContenderController) Update(m []Resource) error {
 		if err != nil {
 			log.Printf("Failed to exec query when updating contender:\n%+v\n", c)
 			log.Println("Error:", err)
+			return err
+		}
+	}
+
+	// Commit sql transaction
+	if err = tx.Commit(); err != nil {
+		log.Println("Failed to Commit txn:", err)
+		return err
+	}
+
+	return nil
+}
+
+//
+func (cc *ContenderController) Destroy(ids []int) error {
+	// Begin sql transaction
+	tx, err := cc.db.Begin()
+	if err != nil {
+		log.Println("Failed to begin txn:", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	// Create the SQL query
+	q := fmt.Sprintf("DELETE FROM %s WHERE fb_id = $1;", cc.DBTableName())
+
+	// Iterate through each contender and update it in the db
+	for _, v := range ids {
+		res, err := tx.Exec(q, v)
+		if err != nil {
+			log.Printf("Failed to exec query when deleting contender ID:\n%d\n", v)
+			log.Println("Error:", err)
+			return err
+		}
+
+		// Not really sure what this can error on
+		numrows, err := res.RowsAffected()
+		if err != nil {
+			log.Printf("Failed to query rows effected when deleting contender ID:\n%d\n%v", v, err)
+			return err
+		}
+
+		// If more or less than one row is affected then we have a problem
+		switch {
+		case numrows == 0:
+			log.Printf("Couldn't find and delete contender ID:\n%d\n%v", v, err)
+			return err
+		case numrows != 1:
+			// This is really bad, should never see. May be an SQL injection attempt.
+			log.Printf("Multiple rows effected when deleting single contender id\n%d\n%v", v, err)
 			return err
 		}
 	}

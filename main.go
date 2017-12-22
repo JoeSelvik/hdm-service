@@ -58,10 +58,10 @@ func main() {
 	//	panic(err)
 	//}
 
-	contenders, err := cc.ReadCollection()
-	if err != nil {
-		panic(err)
-	}
+	//contenders, err := cc.ReadCollection()
+	//if err != nil {
+	//	panic(err)
+	//}
 	//log.Println("contenders:", contenders)
 	//for _, v := range contenders {
 	//	log.Println(fmt.Sprintf("%+v", v))
@@ -96,11 +96,22 @@ func main() {
 	//	panic(err)
 	//}
 
-	//c, err := cc.Read(10152076511328715)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//log.Println(fmt.Sprintf("%+v", c))
+	// Test read and destroy
+	c, err := cc.Read(10205178963326891)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(fmt.Sprintf("%+v", c))
+
+	log.Println("Deleting")
+	cc.Destroy([]int{10205178963326891})
+
+	log.Println("Reading deleted contender")
+	c, err = cc.Read(10205178963326891)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(fmt.Sprintf("%+v", c))
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
