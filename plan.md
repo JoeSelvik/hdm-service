@@ -93,15 +93,12 @@
 # START
 * clean Sprintf vs log.Println
 * address todo's
+* UpdateContendersVariableDependentData
 
 # HDM Qs
 * should facebook_controller panic or return error? conform to resource paradigm?
-* add an int totalposts to contenders table for convenience and exploratory work?
 * where to get and store a Post's permalink_url?
-* move create table methods to own sql file?
 * should I be using UNIQUE in my tables? does this show up with .schema?
-* INSERT with new, INSERT with existing, vs INSERT OR REPLACE INTO
-* should post.PostedDate be a time.Time instead of string
 
 # golang
 * optional arguments, like make() length and capacity arguments

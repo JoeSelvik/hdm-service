@@ -40,16 +40,13 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	}
 
 	// Create the SQL query
-	// todo: %s and cc.DBTableName() instead?
-	// todo: time.Now() instead of CURRENT_TIMESTAMP?
-	// todo: check other query statements
-	q := `
-	INSERT INTO contenders (
+	q := fmt.Sprintf(`
+	INSERT INTO %s (
 		fb_id, fb_group_id,
 		name, total_posts, avg_likes_per_post, total_likes_received, total_likes_given, posts_used,
 		created_at, updated_at
 	) values (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-	`
+	`, cc.DBTableName())
 
 	// Begin sql transaction
 	tx, err := cc.db.Begin()
@@ -61,10 +58,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 
 	// Insert each Contender into contenders table
 	var contenderIds []int
-	// todo: use range?
-	for i := 0; i < len(contenders); i++ {
-		c := contenders[i]
-
+	for _, c := range contenders {
 		posts := slicePostIdsToStringPosts(c.TotalPosts)
 		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
 
@@ -110,7 +104,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 	var updatedAt time.Time
 
 	// Grab contender entry from table
-	q := fmt.Sprintf("SELECT * FROM contenders WHERE fb_id=%d", fbId)
+	q := fmt.Sprintf("SELECT * FROM %s WHERE fb_id=%d", cc.DBTableName(), fbId)
 	err := cc.db.QueryRow(q).Scan(&fbId, &fbGroupId, &name, &totalPostsString, &avgLikesPerPost, &totalLikesReceived,
 		&totalLikesGiven, &postsUsedString, &createdAt, &updatedAt) // todo: okay to unscan into fbId arg?
 	switch {
@@ -173,12 +167,12 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	defer tx.Rollback()
 
 	// Create the SQL query
-	q := `
-	UPDATE contenders SET
+	q := fmt.Sprintf(`
+	UPDATE %s SET
 		total_posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?, posts_used=?,
 		updated_at=CURRENT_TIMESTAMP
 		WHERE fb_id=?
-	`
+	`, cc.DBTableName())
 
 	// Iterate through each contender and update it in the db
 	for _, c := range contenders {
@@ -342,19 +336,20 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 // todo: does this section belong?
 // /////
 
+// PopulateContendersTable pulls contenders via the FB api and enters them into the contender table.
 func (cc *ContenderController) PopulateContendersTable() error {
 	log.Println("Attempting to create Contenders")
 
 	// Convert contender struct pointers into a slice of Resource interfaces
 	contenders, err := PullContendersFromFb()
-	contenderResources := make([]Resource, len(contenders))
-	for i, v := range contenders {
-		contenderResources[i] = Resource(v)
-	}
-
 	if err != nil {
 		log.Println("Failed to get Contenders from fb:", err)
 		return err
+	}
+
+	contenderResources := make([]Resource, len(contenders))
+	for i, v := range contenders {
+		contenderResources[i] = Resource(v)
 	}
 
 	_, err = cc.Create(contenderResources)
