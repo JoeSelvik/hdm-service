@@ -91,8 +91,7 @@
 
 
 # START
-* clean Sprintf vs log.Println
-* address todo's
+* basic UTs for contender, cc, and fbcontroller
 * UpdateContendersVariableDependentData
 
 # HDM Qs

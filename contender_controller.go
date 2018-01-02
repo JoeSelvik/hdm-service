@@ -66,7 +66,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 			c.FbId, c.FbGroupId,
 			c.Name, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed)
 		if err != nil {
-			msg := "Something is wrong with our database - we'll be back up soon!"
+			msg := fmt.Sprintf("Couldn't create contender: %+v", c)
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
@@ -337,25 +337,25 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 // /////
 
 // PopulateContendersTable pulls contenders via the FB api and enters them into the contender table.
-func (cc *ContenderController) PopulateContendersTable() error {
+func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	log.Println("Attempting to create Contenders")
 
-	// Convert contender struct pointers into a slice of Resource interfaces
-	contenders, err := PullContendersFromFb()
-	if err != nil {
-		log.Println("Failed to get Contenders from fb:", err)
-		return err
+	// Get slice of contender struct pointers from fb
+	contenders, aerr := PullContendersFromFb()
+	if aerr != nil {
+		return aerr
 	}
 
+	// Convert each contender struct ptr to Resource interface
 	contenderResources := make([]Resource, len(contenders))
 	for i, v := range contenders {
 		contenderResources[i] = Resource(v)
 	}
 
-	_, err = cc.Create(contenderResources)
-	if err != nil {
-		log.Println("Failed to create Contenders from FB:", err)
-		return err
+	// Populate Contenders table
+	_, aerr = cc.Create(contenderResources)
+	if aerr != nil {
+		return aerr
 	}
 
 	log.Println("Successfully created Contenders")
@@ -395,6 +395,5 @@ func slicePostIdsToStringPosts(slicePostIds []int) string {
 	splitStringPosts := strings.Split(stringPosts, " ")         // "[1 2 3]" to ["[1 2 3]"]
 	joinedStringPosts := strings.Join(splitStringPosts, ", ")   // ["[1 2 3]"] to "[1, 2, 3]"
 	trimmedStringPosts := strings.Trim(joinedStringPosts, "[]") // "[1, 2, 3]" to "1, 2, 3"
-
 	return trimmedStringPosts
 }

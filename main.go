@@ -1,8 +1,3 @@
-/*
-Dependancies
-* github.com/mattn/go-sqlite3
-
-*/
 package main
 
 import (
@@ -28,7 +23,7 @@ func main() {
 	Config = NewConfig()
 
 	// Print the config
-	log.Printf("Facebook Access Token:\t%d\n", Config.FbAccessToken)
+	log.Printf("Facebook Access Token:\t%s\n", Config.FbAccessToken)
 	log.Printf("Facebook Group Id:\t%d\n", Config.FbGroupId)
 	log.Printf("Database:\t%s\n", Config.DbPath)
 	log.Println()
@@ -36,37 +31,37 @@ func main() {
 	// Create db handle
 	db := getDBHandle(Config)
 
-	//con, err := PullContendersFromFb()
-	//if err != nil {
+	//// Pull fb contenders
+	//con, aerr := PullContendersFromFb()
+	//if aerr != nil {
 	//	panic("Couldn't get Facebook contenders")
 	//}
 	//log.Println("found contenders:", len(con))
-	//log.Println(con[0])
 
-	//posts, err := PullPostsFromFb(Config.StartTime)
-	//if err != nil {
+	//// Pull fb posts
+	//posts, aerr := PullPostsFromFb(Config.StartTime)
+	//if aerr != nil {
 	//	panic("Couldn't get Facebook posts")
 	//}
-	//log.Println(len(posts))
+	//log.Println("found posts:", len(posts))
 
 	// Register http handlers
 	cc := &ContenderController{db: db}
 	http.Handle(cc.Path(), cc)
 
-	//err = cc.PopulateContendersTable()
-	//if err != nil {
-	//	panic(err)
+	//// Create Contenders
+	//aerr := cc.PopulateContendersTable()
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
 	//}
 
-	//contenders, err := cc.ReadCollection()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//log.Println("contenders:", contenders)
-	//for _, v := range contenders {
-	//	log.Println(fmt.Sprintf("%+v", v))
-	//}
-	//
+	// Read Contenders
+	contenders, aerr := cc.ReadCollection()
+	if aerr != nil {
+		panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
+	}
+	log.Println("Number of contenders:", len(contenders))
+	log.Printf("First Contender: %+v\n", contenders[0])
 
 	//// Test update
 	//cs := make([]Resource, 2) // allocates length 0 and capacity 2?
@@ -97,9 +92,9 @@ func main() {
 	//}
 
 	//// Test read and destroy
-	//c, err := cc.Read(10205178963326891)
-	//if err != nil {
-	//	panic(err)
+	//c, aerr := cc.Read(10205178963326891)
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
 	//}
 	//log.Println(fmt.Sprintf("%+v", c))
 	//
@@ -107,9 +102,9 @@ func main() {
 	//cc.Destroy([]int{10205178963326891})
 	//
 	//log.Println("Reading deleted contender")
-	//c, err = cc.Read(10205178963326891)
-	//if err != nil {
-	//	panic(err)
+	//c, aerr = cc.Read(10205178963326891)
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
 	//}
 	//log.Println(fmt.Sprintf("%+v", c))
 

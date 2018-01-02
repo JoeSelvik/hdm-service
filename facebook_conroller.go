@@ -4,6 +4,7 @@ import (
 	"fmt"
 	fb "github.com/huandu/facebook"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -25,23 +26,23 @@ func getFbSession() *fb.Session {
 }
 
 // PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
-func PullContendersFromFb() ([]*Contender, error) {
+func PullContendersFromFb() ([]*Contender, *ApplicationError) {
 	// response is a map[string]interface{}
 	response, err := fb.Get(fmt.Sprintf("/%d/members", Config.FbGroupId), fb.Params{
 		"access_token": Config.FbAccessToken,
 		"fields":       []string{"name", "id"},
 	})
 	if err != nil {
-		log.Println("Failed to get group members from fb:", err)
-		return nil, err
+		msg := "Failed to get group members from fb"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	// Get the member's paging object
 	session := getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
-		log.Println("Failed to page on the group members response:", err)
-		return nil, err
+		msg := "Failed to page on the group members response"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	var contenders []*Contender
@@ -56,8 +57,8 @@ func PullContendersFromFb() ([]*Contender, error) {
 			// Convert interface to it's real string value, then the string to an int.
 			id, err := strconv.Atoi(facebookContender.Get("id").(string))
 			if err != nil {
-				log.Println("Failed to convert fb contenders id to a string:", err)
-				return nil, err
+				msg := "Failed to convert fb contenders id to a string"
+				return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 			}
 
 			c.FbId = id
@@ -67,8 +68,8 @@ func PullContendersFromFb() ([]*Contender, error) {
 
 		noMore, err := paging.Next()
 		if err != nil {
-			log.Println("Failed to get next paging object for members:", err)
-			return nil, err
+			msg := "Failed to get next paging object for members"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 		if noMore {
 			break
@@ -81,23 +82,23 @@ func PullContendersFromFb() ([]*Contender, error) {
 // PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
 //
 // todo: use start and end times
-func PullPostsFromFb(startDate time.Time) ([]Post, error) {
+func PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", Config.FbGroupId), fb.Params{
 		"access_token": Config.FbAccessToken,
 		"fields":       []string{"from", "created_time", "likes"},
 	})
 	if err != nil {
-		log.Println("Failed to get group feed:", err)
-		return nil, err
+		msg := "Failed to get group feed"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	// Get the feed's paging object
 	session := getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
-		log.Println("Failed to page on the group feed response:", err)
-		return nil, err
+		msg := "Failed to page on the group feed response"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
 	var posts []Post
@@ -107,23 +108,20 @@ func PullPostsFromFb(startDate time.Time) ([]Post, error) {
 Loop:
 	for {
 		results := paging.Data()
-		log.Println("Posts page ", count)
 
 		// 25 posts per page, load data into a Post struct
 		for i := 0; i < len(results); i++ {
 			var p Post
 			facebookPost := fb.Result(results[i]) // cast the var
-			log.Println("fb post: ", facebookPost)
 
 			// stop when post reaches startDate
 			p.PostedDate = facebookPost.Get("created_time").(string)
 			t, err := time.Parse(GoTimeLayout, p.PostedDate)
 			if err != nil {
-				log.Println("Failed to parse a fb post's postedDate:", err)
-				return nil, err
+				msg := "Failed to parse a fb post's postedDate"
+				return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 			}
 			if t.Before(startDate) {
-				log.Println("Reached a post before the startDate")
 				break Loop
 			}
 
@@ -149,13 +147,12 @@ Loop:
 
 			// save the new Post
 			posts = append(posts, p)
-			log.Println("post: ", p)
 		}
 
 		noMore, err := paging.Next()
 		if err != nil {
-			log.Println("Failed to get next paging object for posts:", err)
-			return nil, err
+			msg := "Failed to get next paging object for posts"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 		if noMore {
 			log.Println("Reached the end of group feed")
@@ -163,6 +160,5 @@ Loop:
 		}
 		count++
 	}
-	log.Println("Number of FB Posts:", len(posts))
 	return posts, nil
 }
