@@ -27,7 +27,8 @@ func getFbSession() *fb.Session {
 
 // PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
 func PullContendersFromFb() ([]*Contender, *ApplicationError) {
-	// response is a map[string]interface{}
+	// Request members via fb graph api
+	// response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/members", Config.FbGroupId), fb.Params{
 		"access_token": Config.FbAccessToken,
 		"fields":       []string{"name", "id"},
