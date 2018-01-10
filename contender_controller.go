@@ -11,6 +11,7 @@ import (
 )
 
 type ContenderController struct {
+	fh *facebookHandle
 	db *sql.DB
 }
 
@@ -341,7 +342,7 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	log.Println("Attempting to create Contenders")
 
 	// Get slice of contender struct pointers from fb
-	contenders, aerr := PullContendersFromFb()
+	contenders, aerr := cc.fh.PullContendersFromFb()
 	if aerr != nil {
 		return aerr
 	}

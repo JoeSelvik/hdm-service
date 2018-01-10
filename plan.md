@@ -91,8 +91,7 @@
 
 
 # START
-* stringPostsToSlicePostIds []int vs make([]int, len(0))
-* mock fb graph api calls for fbc uts
+* TestContenderController_PopulateContendersTable
 * test db for cc uts
 * basic UTs for contender, cc, and fbcontroller
 * UpdateContendersVariableDependentData

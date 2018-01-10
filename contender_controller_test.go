@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func TestContenderController_PopulateContendersTable(t *testing.T) {
+
+}
+
 func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
 	var emptySlice []int
 	var tests = []struct {
@@ -36,6 +40,24 @@ func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
 				t.Logf("outSlice: %s, type: %s", tt.outSlice, reflect.TypeOf(tt.outSlice))
 				t.Errorf("Valid '%s' did not match slice of ints.", tt.inString)
 			}
+		}
+	}
+}
+
+func TestContenderController_slicePostIdsToStringPosts(t *testing.T) {
+	var tests = []struct {
+		inSlice   []int
+		outString string
+	}{
+		{[]int{1, 2, 3}, "1, 2, 3"},
+		{[]int{100}, "100"},
+		{[]int{}, ""},
+	}
+
+	for _, tt := range tests {
+		result := slicePostIdsToStringPosts(tt.inSlice)
+		if result != tt.outString {
+			t.Errorf("Slice '%d' returned incorrect '%s'", tt.inSlice, tt.outString)
 		}
 	}
 }

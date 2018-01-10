@@ -1,3 +1,7 @@
+// Not unit tested because there are only two calls to the fb SDK library and all this
+// code is parsing logic around the custom types that are returned from the dependency. Would
+// have to implement fake interfaces for any functionality called on fb; paging and result.
+
 package main
 
 import (
@@ -8,6 +12,13 @@ import (
 	"strconv"
 	"time"
 )
+
+type facebooker interface {
+	PullContendersFromFb() ([]*Contender, *ApplicationError)
+	PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError)
+}
+
+type facebookHandle struct{}
 
 // GetFbSession returns the pointer to a fb Session object.
 //
@@ -26,7 +37,7 @@ func getFbSession() *fb.Session {
 }
 
 // PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
-func PullContendersFromFb() ([]*Contender, *ApplicationError) {
+func (fh facebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
 	// Request members via fb graph api
 	// response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/members", Config.FbGroupId), fb.Params{
@@ -83,7 +94,7 @@ func PullContendersFromFb() ([]*Contender, *ApplicationError) {
 // PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
 //
 // todo: use start and end times
-func PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
+func (fh facebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", Config.FbGroupId), fb.Params{
 		"access_token": Config.FbAccessToken,

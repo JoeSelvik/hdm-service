@@ -20,6 +20,7 @@ func main() {
 	log.Println()
 
 	// Parse the config, define global Config variable.
+	// todo: put into handles vs global?
 	Config = NewConfig()
 
 	// Print the config
@@ -30,6 +31,9 @@ func main() {
 
 	// Create db handle
 	db := getDBHandle(Config)
+
+	// Create the fb handle
+	fh := facebookHandle{}
 
 	//// Pull fb contenders
 	//con, aerr := PullContendersFromFb()
@@ -46,7 +50,7 @@ func main() {
 	//log.Println("found posts:", len(posts))
 
 	// Register http handlers
-	cc := &ContenderController{db: db}
+	cc := &ContenderController{fh: &fh, db: db}
 	http.Handle(cc.Path(), cc)
 
 	//// Create Contenders

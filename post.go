@@ -83,7 +83,9 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 		return err
 	}
 
-	fbPosts, err := PullPostsFromFb(startDate)
+	fh := facebookHandle{}
+
+	fbPosts, err := fh.PullPostsFromFb(startDate)
 	if err != nil {
 		log.Println("Failed to get posts from fb:", err)
 		return err
