@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,8 +12,9 @@ import (
 )
 
 type ContenderController struct {
-	fh *facebookHandle
-	db *sql.DB
+	config *Configuration
+	db     *models.DB
+	fh     Facebooker
 }
 
 // ServeHTTP routes incoming requests to the right service.
@@ -339,7 +341,7 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 
 // PopulateContendersTable pulls contenders via the FB api and enters them into the contender table.
 func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
-	log.Println("Attempting to create Contenders")
+	log.Println("Pulling contenders from facebook and creating in db")
 
 	// Get slice of contender struct pointers from fb
 	contenders, aerr := cc.fh.PullContendersFromFb()
@@ -359,7 +361,6 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 		return aerr
 	}
 
-	log.Println("Successfully created Contenders")
 	return nil
 }
 

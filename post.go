@@ -83,7 +83,7 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 		return err
 	}
 
-	fh := facebookHandle{}
+	fh := FacebookHandle{}
 
 	fbPosts, err := fh.PullPostsFromFb(startDate)
 	if err != nil {

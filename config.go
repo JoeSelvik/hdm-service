@@ -27,6 +27,8 @@ type Configuration struct {
 	FbSession       string
 	FbUserId        int
 	DbPath          string `json:"db_path"`
+	DbSetupScript   string `json:"db_setup_script"` // optional
+	DbTestPath      string `json:"db_test_path"`    // optional
 	Port            int
 }
 

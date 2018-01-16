@@ -58,6 +58,9 @@
 * GetScore()
   * GET /matchup/1
 
+# readme
+* sqlite3 data.db < create_tables.sql
+
 
 # main
 * read config file
@@ -91,9 +94,8 @@
 
 
 # START
-* TestContenderController_PopulateContendersTable
-* test db for cc uts
-* basic UTs for contender, cc, and fbcontroller
+* testdb run sqlite script
+* basic UTs for contender, cc
 * UpdateContendersVariableDependentData
 
 # HDM Qs

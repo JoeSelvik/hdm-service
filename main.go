@@ -2,17 +2,13 @@ package main
 
 import (
 	"bufio"
-	"database/sql"
 	"fmt"
+	"github.com/JoeSelvik/hdm-service/models"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
-)
-
-var (
-	Config *Configuration
 )
 
 func main() {
@@ -21,19 +17,22 @@ func main() {
 
 	// Parse the config, define global Config variable.
 	// todo: put into handles vs global?
-	Config = NewConfig()
+	config := NewConfig()
 
 	// Print the config
-	log.Printf("Facebook Access Token:\t%s\n", Config.FbAccessToken)
-	log.Printf("Facebook Group Id:\t%d\n", Config.FbGroupId)
-	log.Printf("Database:\t%s\n", Config.DbPath)
+	log.Printf("Facebook Access Token:\t%s\n", config.FbAccessToken)
+	log.Printf("Facebook Group Id:\t%d\n", config.FbGroupId)
+	log.Printf("Database:\t%s\n", config.DbPath)
 	log.Println()
 
-	// Create db handle
-	db := getDBHandle(Config)
+	// Open the DB
+	db, err := models.NewDB(config.DbPath)
+	if err != nil {
+		panic(err)
+	}
 
 	// Create the fb handle
-	fh := facebookHandle{}
+	fh := FacebookHandle{config: config}
 
 	//// Pull fb contenders
 	//con, aerr := PullContendersFromFb()
@@ -50,7 +49,7 @@ func main() {
 	//log.Println("found posts:", len(posts))
 
 	// Register http handlers
-	cc := &ContenderController{fh: &fh, db: db}
+	cc := &ContenderController{config: config, db: db, fh: &fh}
 	http.Handle(cc.Path(), cc)
 
 	//// Create Contenders
@@ -118,27 +117,6 @@ func main() {
 	// Listen on port
 	// todo: handle this with channels and check for errors?
 	http.ListenAndServe(":8080", nil)
-}
-
-// getDBHandle opens a connection and returns an active handle to the sqlite db
-func getDBHandle(c *Configuration) *sql.DB {
-	// sqlite setup and verification
-	db, err := sql.Open("sqlite3", c.DbPath)
-	if err != nil {
-		panic(fmt.Sprintf("Error when opening sqlite3: %s", err))
-	}
-
-	if db == nil {
-		panic("db nil")
-	}
-
-	// sql.open may just validate its arguments without creating a connection to the database.
-	// To verify that the data source name is valid, call Ping.
-	err = db.Ping()
-	if err != nil {
-		panic(fmt.Sprintf("Error when pinging db: %s", err))
-	}
-	return db
 }
 
 // speakHandle prints random dog sounds to verify the system is alive.

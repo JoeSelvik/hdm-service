@@ -13,21 +13,24 @@ import (
 	"time"
 )
 
-type facebooker interface {
+type Facebooker interface {
 	PullContendersFromFb() ([]*Contender, *ApplicationError)
 	PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError)
 }
 
-type facebookHandle struct{}
+// todo: only load with FB config options?
+type FacebookHandle struct {
+	config *Configuration
+}
 
 // GetFbSession returns the pointer to a fb Session object.
 //
 // Panics if interacting with FB does not work.
 // todo: learn how this works
-func getFbSession() *fb.Session {
+func (fh FacebookHandle) getFbSession() *fb.Session {
 	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
-	session := globalApp.Session(Config.FbAccessToken)
+	session := globalApp.Session(fh.config.FbAccessToken)
 	err := session.Validate()
 	if err != nil {
 		panic(err)
@@ -37,11 +40,11 @@ func getFbSession() *fb.Session {
 }
 
 // PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
-func (fh facebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
+func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
 	// Request members via fb graph api
 	// response is a map[string]interface{} fb.Result
-	response, err := fb.Get(fmt.Sprintf("/%d/members", Config.FbGroupId), fb.Params{
-		"access_token": Config.FbAccessToken,
+	response, err := fb.Get(fmt.Sprintf("/%d/members", fh.config.FbGroupId), fb.Params{
+		"access_token": fh.config.FbAccessToken,
 		"fields":       []string{"name", "id"},
 	})
 	if err != nil {
@@ -50,7 +53,7 @@ func (fh facebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 	}
 
 	// Get the member's paging object
-	session := getFbSession()
+	session := fh.getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
 		msg := "Failed to page on the group members response"
@@ -94,10 +97,10 @@ func (fh facebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 // PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
 //
 // todo: use start and end times
-func (fh facebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
+func (fh FacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
 	// Get the group feed
-	response, err := fb.Get(fmt.Sprintf("/%d/feed", Config.FbGroupId), fb.Params{
-		"access_token": Config.FbAccessToken,
+	response, err := fb.Get(fmt.Sprintf("/%d/feed", fh.config.FbGroupId), fb.Params{
+		"access_token": fh.config.FbAccessToken,
 		"fields":       []string{"from", "created_time", "likes"},
 	})
 	if err != nil {
@@ -106,7 +109,7 @@ func (fh facebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *Applicat
 	}
 
 	// Get the feed's paging object
-	session := getFbSession()
+	session := fh.getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
 		msg := "Failed to page on the group feed response"
