@@ -94,15 +94,14 @@
 
 
 # START
-* testdb run sqlite script
+* how to pass cc, fh, and db in test setup
+* teardown
 * basic UTs for contender, cc
 * UpdateContendersVariableDependentData
 
 # HDM Qs
-* should facebook_controller panic or return error? conform to resource paradigm?
 * where to get and store a Post's permalink_url?
 * should I be using UNIQUE in my tables? does this show up with .schema?
 
 # golang
 * optional arguments, like make() length and capacity arguments
-* slice of structs, slice of struct ptrs, slice of interfaces and modifying. compare to python

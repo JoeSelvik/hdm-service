@@ -1,15 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"os"
-	"os/exec"
 	"reflect"
 	"testing"
 	"time"
+	"io/ioutil"
+	"strings"
 )
 
 type fakeFacebookHandle struct{}
@@ -39,34 +39,34 @@ func (fh *fakeFacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *App
 func setup() error {
 	log.Println("contender_controller_test setup")
 	config := NewConfig()
-	log.Println(config.DbTestPath)
-	log.Println(config.DbSetupScript)
 
-	cmd := exec.Command("sqlite3", "test.db", "<", "create_tables.sql")
-	//cmd := exec.Command("sqlite3 test.db", config.DbTestPath, "<", config.DbSetupScript)
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	log.Printf("cmd: %+v\n", cmd)
-	log.Println("env:", cmd.Env)
-	log.Println("dir:", cmd.Dir)
-	log.Println("path:", cmd.Path)
-	log.Println("args:", cmd.Args)
-
-	err := cmd.Run()
+	// Get db setup commands
+	// todo: quick and dirty, split has extra "" entry
+	file, err := ioutil.ReadFile(config.DbSetupScript)
 	if err != nil {
-		log.Printf("Error executing query. Command Output: %+v\n: %+v, %v\n", out.String(), stderr.String(), err)
-		log.Printf("out: %+v\n", out.String())
-		log.Printf("stderr: %+v\n", stderr.String())
-		log.Printf("err: %v\n", err)
+		log.Printf("Could not open test db script: %s\n", err)
+		return err
+	}
+	cmd := strings.Split(string(file), ";")
+
+	// Open db
+	db, err := models.NewDB(config.DbTestPath)
+	if err != nil {
+		log.Printf("Could not open test db: %s\n", err)
 		return err
 	}
 
-	//db, err := models.NewDB(config.DbTestPath)
-	//if err != nil {
-	//	log.Printf("Could not open test db: %s\n", err)
-	//	return err
-	//}
+	for _, commands := range cmd {
+		if commands != "" {
+			result, err := db.Exec(commands)
+			if err != nil {
+				log.Printf("Could not execute cmd: %s\n%s\n", err, cmd)
+				log.Printf("Result: %+v\n", result)
+				return err
+			}
+		}
+	}
+
 	//fh := fakeFacebookHandle{}
 	//cc := &ContenderController{config: config, db: db, fh: &fh}
 
@@ -102,7 +102,7 @@ func TestMain(m *testing.M) {
 func TestContenderController_PopulateContendersTable(t *testing.T) {
 	config := NewConfig()
 
-	db, err := models.NewDB(config.DbTestPath)
+	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
 		t.Fatal("Could not open test db")
 	}

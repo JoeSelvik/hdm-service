@@ -26,10 +26,11 @@ func main() {
 	log.Println()
 
 	// Open the DB
-	db, err := models.NewDB(config.DbPath)
+	db, err := models.OpenDB(config.DbPath)
 	if err != nil {
 		panic(err)
 	}
+	// todo: defer db.close()?
 
 	// Create the fb handle
 	fh := FacebookHandle{config: config}
