@@ -94,9 +94,6 @@
 
 
 # START
-* how to pass cc, fh, and db in test setup
-* teardown
-* basic UTs for contender, cc
 * UpdateContendersVariableDependentData
 
 # HDM Qs

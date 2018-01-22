@@ -13,7 +13,22 @@ type DB struct {
 	*sql.DB
 }
 
-// OpenDB opens a connection and returns a DB struct with an active handle to the sqlite db.
+// NewDB returns a connection to new database.
+//
+// If the given name exists, rename it to *.old, overwrites any existing *.old db.
+func NewDB(dbPath string) (*DB, error) {
+	if _, err := os.Stat(dbPath); err == nil {
+		log.Println(dbPath, "existed, renaming to .old.")
+		err := os.Rename(dbPath, dbPath+".old")
+		if err != nil {
+			log.Printf("Error when renaming db: %s\n", err)
+			return nil, err
+		}
+	}
+	return OpenDB(dbPath)
+}
+
+// OpenDB returns a connection to an existing db and returns a DB struct with an active handle.
 func OpenDB(dbPath string) (*DB, error) {
 	// sqlite setup and verification
 	db, err := sql.Open("sqlite3", dbPath)
@@ -35,19 +50,4 @@ func OpenDB(dbPath string) (*DB, error) {
 	}
 
 	return &DB{db}, nil
-}
-
-// NewDB returns a connection to new database.
-//
-// If the given name exists, rename it to *.old, overwrites any existing *.old db.
-func NewDB(dbPath string) (*DB, error) {
-	if _, err := os.Stat(dbPath); err == nil {
-		log.Println(dbPath, "existed, renaming to .old.")
-		err := os.Rename(dbPath, dbPath+".old")
-		if err != nil {
-			log.Printf("Error when renaming db: %s\n", err)
-			return nil, err
-		}
-	}
-	return OpenDB(dbPath)
 }

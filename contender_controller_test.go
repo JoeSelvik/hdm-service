@@ -1,15 +1,17 @@
+// Simple UTs to test for basic functionality, could be cleaner.
+
 package main
 
 import (
 	"errors"
 	"github.com/JoeSelvik/hdm-service/models"
+	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
-	"io/ioutil"
-	"strings"
 )
 
 type fakeFacebookHandle struct{}
@@ -56,6 +58,7 @@ func setup() error {
 		return err
 	}
 
+	// Execute each command in db setup script
 	for _, commands := range cmd {
 		if commands != "" {
 			result, err := db.Exec(commands)
@@ -66,9 +69,6 @@ func setup() error {
 			}
 		}
 	}
-
-	//fh := fakeFacebookHandle{}
-	//cc := &ContenderController{config: config, db: db, fh: &fh}
 
 	return nil
 }
@@ -98,10 +98,82 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
+// Create, ReadCollection, Update, Read, Destroy, Read contender; very simple test.
+func TestContenderController_Create(t *testing.T) {
+	config := NewConfig()
+	db, err := models.OpenDB(config.DbTestPath)
+	if err != nil {
+		t.Fatal("Could not open test db")
+	}
+	cc := &ContenderController{db: db}
+
+	// Create a Contender struct and convert it to a Resource interface
+	contenders := []*Contender{
+		{
+			Name: "matt anderson",
+			FbId: 666},
+	}
+	contenderResources := make([]Resource, len(contenders))
+	for i, v := range contenders {
+		contenderResources[i] = Resource(v)
+	}
+
+	cids, aerr := cc.Create(contenderResources)
+	if aerr != nil {
+		t.Fatal("Should not error when creating contender")
+	}
+	if len(cids) != 1 {
+		t.Fatal("Should only get back a single id")
+	}
+
+	// Read all contenders
+	resources, aerr := cc.ReadCollection()
+	if aerr != nil {
+		t.Fatal("Unable to read collection")
+	}
+	var lookup *Contender
+	for _, c := range resources {
+		if c.(*Contender).Name == "matt anderson" {
+			lookup = c.(*Contender)
+			break
+		}
+	}
+	if lookup.Name != "matt anderson" {
+		t.Fatal("Unable to find contender in ReadCollection")
+	}
+
+	// Update contender, convert to slice of Resources
+	lookup.PostsUsed = []int{1, 2, 3}
+	lookupResource := Resource(lookup)
+	aerr = cc.Update([]Resource{lookupResource})
+	if aerr != nil {
+		t.Fatalf("Error when updating resource: %s\n", aerr)
+	}
+
+	// Read the updated contender
+	resource, aerr := cc.Read(666)
+	if aerr != nil {
+		t.Fatalf("Error when reading resource: %s\n", aerr)
+	}
+	contender := resource.(*Contender)
+	if contender.Name != "matt anderson" {
+		t.Fatal("Read did not find updated contender")
+	}
+
+	// Destroy the contender
+	aerr = cc.Destroy([]int{666})
+	if aerr != nil {
+		t.Fatalf("Error when destroying resource: %s\n", aerr)
+	}
+	_, aerr = cc.Read(666)
+	if aerr == nil {
+		t.Fatalf("Should find error when reading non-existent resource: %s\n", aerr)
+	}
+}
+
 // TestContenderController_PopulateContendersTable tests that contenders from FB get created in a db.
 func TestContenderController_PopulateContendersTable(t *testing.T) {
 	config := NewConfig()
-
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
 		t.Fatal("Could not open test db")
@@ -115,8 +187,8 @@ func TestContenderController_PopulateContendersTable(t *testing.T) {
 	}
 
 	contenders, aerr := cc.ReadCollection()
-	if len(contenders) != 2 {
-		t.Error("Should have found two contenders in DB")
+	if len(contenders) < 1 {
+		t.Error("Should have found some contenders in DB")
 	}
 }
 
