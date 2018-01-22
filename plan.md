@@ -94,6 +94,7 @@
 
 
 # START
+* create post
 * PullPostsFromFb and Create and ReadCollection
 * UpdateContendersVariableDependentData
 

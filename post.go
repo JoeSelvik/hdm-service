@@ -13,8 +13,18 @@ type Post struct {
 	PostedDate time.Time
 	Author     string
 	TotalLikes int
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time `json:"created_at" db:"created_at"`
+}
+
+// SetCreatedAt will set the CreatedAt attribute of a User struct
+func (p *Post) SetCreatedAt(t time.Time) {
+	p.CreatedAt = t
+}
+
+// SetUpdatedAt will set the UpdatedAt attribute of a User struct
+func (p *Post) SetUpdatedAt(t time.Time) {
+	p.UpdatedAt = t
 }
 
 type Like struct {

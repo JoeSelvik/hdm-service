@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// todo: pointers or data as is?
 type Contender struct {
 	FbId               int `facebook:",required"`
 	FbGroupId          int

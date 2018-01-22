@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/JoeSelvik/hdm-service/models"
 	"net/http"
 )
@@ -29,7 +30,56 @@ func (pc *PostController) DBTableName() string {
 
 // Create writes a new post to the db for each given Resource.
 func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
-	return nil, &ApplicationError{Code: http.StatusNotImplemented}
+	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
+	var posts []*Post
+	for i := 0; i < len(m); i++ {
+		p := m[i]
+		posts = append(posts, p.(*Post))
+	}
+
+	// Create the SQL query
+	q := fmt.Sprintf(`
+	INSERT INTO %s (
+		fb_id, fb_group_id,
+		posted_date, author, total_likes,
+		created_at, updated_at
+	) values (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`, pc.DBTableName())
+
+	// Begin sql transaction
+	tx, err := pc.db.Begin()
+	if err != nil {
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+	}
+	defer tx.Rollback()
+
+	var postIds []int
+	for _, p := range posts {
+		result, err := tx.Exec(q,
+			p.FbId, p.FbGroupId,
+			p.PostedDate, posts, p.Author, p.TotalLikes)
+		if err != nil {
+			msg := fmt.Sprintf("Couldn't create post: %+v", p)
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+
+		// Save each id to return
+		id, err := result.LastInsertId()
+		if err != nil {
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+		postIds = append(postIds, int(id))
+	}
+
+	// Commit sql transaction
+	if err = tx.Commit(); err != nil {
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+	}
+
+	return postIds, &ApplicationError{Code: http.StatusNotImplemented}
 }
 
 // Read returns the post in the db for a given FbId.
