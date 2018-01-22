@@ -3,38 +3,39 @@
 * FbGroupId int                   --> INTEGER
 * Name string                     --> TEXT
 * TotalPosts []int                --> BLOB, vd
-* AvgLikesPerPost int             --> INTEGER, vi
+* AvgLikesPerPost float64         --> INTEGER, vi
 * TotalLikesReceived int          --> INTEGER, vd
 * TotalLikesGiven int             --> INTEGER, vd
 * PostsUsed []int                 --> BLOB, vd
-* CreatedAt *time.Time            --> DATETIME
-* UpdatedAt *time.Time            --> DATETIME
+* CreatedAt time.Time             --> DATETIME
+* UpdatedAt time.Time             --> DATETIME
 
 
 # Posts
 * FbId int                        --> INTEGER
-* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * FbGroupId int                   --> INTEGER
-* PostedDate *time.Time           --> DATETIME
+* PostedDate time.Time            --> DATETIME
 * Author string                   --> TEXT
 * TotalLikes int                  --> INTEGER
+* CreatedAt time.Time             --> DATETIME
+* UpdatedAt time.Time             --> DATETIME
 
 
 # Brackets
 * Id int                          --> INTEGER
-* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * FbGroupId int                   --> INTEGER
-* StartTime *time.Time            --> DATETIME
-* EndTime *time.Time              --> DATETIME
+* StartTime time.Time             --> DATETIME
+* EndTime time.Time               --> DATETIME
 * teams [][]string                --> BLOB
 * results []interface{}           --> BLOB
+* CreatedAt time.Time             --> DATETIME
+* UpdatedAt time.Time             --> DATETIME
 
 
 # Matchups
 * Id int                          --> INTEGER
-* CreatedAt/UpdatedAt *time.Time  --> DATETIME
 * BracketId int                   --> INTEGER
-* Name string                     --> TEXT  // determins round?
+* Name string                     --> TEXT  // determines round?
 * ContenderAId int                --> INTEGER
 * APostIds []int                  --> BLOB
 * ContenderBId int                --> INTEGER
@@ -42,3 +43,5 @@
 * InProgress bool                 --> BOOL?, vi
 * AVotes     int                  --> INTEGER, vd
 * BVotes     int                  --> INTEGER, vd
+* CreatedAt time.Time             --> DATETIME
+* UpdatedAt time.Time             --> DATETIME

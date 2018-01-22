@@ -94,6 +94,7 @@
 
 
 # START
+* PullPostsFromFb and Create and ReadCollection
 * UpdateContendersVariableDependentData
 
 # HDM Qs

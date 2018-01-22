@@ -364,6 +364,10 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	return nil
 }
 
+func (cc *ContenderController) UpdateContendersVariableDependentData() *ApplicationError {
+
+}
+
 // stringPostsToSlicePostIds is a helper function that converts a string of ints to a slice of ints.
 //
 // "1, 2, 3" to []int{1, 2, 3}

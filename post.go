@@ -8,13 +8,13 @@ import (
 )
 
 type Post struct {
-	Id        string `facebook:",required"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	PostedDate string
+	FbId       int `facebook:",required"`
+	FbGroupId  int
+	PostedDate time.Time
 	Author     string
-	Likes      Likes
+	TotalLikes int
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type Like struct {
