@@ -16,7 +16,6 @@ func main() {
 	log.Println()
 
 	// Parse the config, define global Config variable.
-	// todo: put into handles vs global?
 	config := NewConfig()
 
 	// Print the config
@@ -52,65 +51,6 @@ func main() {
 	// Register http handlers
 	cc := &ContenderController{config: config, db: db, fh: &fh}
 	http.Handle(cc.Path(), cc)
-
-	//// Create Contenders
-	//aerr := cc.PopulateContendersTable()
-	//if aerr != nil {
-	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
-	//}
-
-	// Read Contenders
-	contenders, aerr := cc.ReadCollection()
-	if aerr != nil {
-		panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
-	}
-	log.Println("Number of contenders:", len(contenders))
-	log.Printf("First Contender: %+v\n", contenders[0])
-
-	//// Test update
-	//cs := make([]Resource, 2) // allocates length 0 and capacity 2?
-	//c0 := contenders[1].(*Contender)
-	//c1 := contenders[2].(*Contender)
-	//cs[0] = c0
-	//cs[1] = c1
-	//
-	//log.Println(fmt.Sprintf("Contender0 pre modification\n%+v\n", c0))
-	//log.Println(fmt.Sprintf("Contender1 pre modification\n%+v\n", c1))
-	//for i := range cs {
-	//	log.Println(fmt.Sprintf("Contenders pre modification\n%+v\n", cs[i]))
-	//}
-	//
-	//c0.TotalPosts = []int{6, 6, 6}
-	//c0.PostsUsed = []int{1, 2, 3}
-	//c1.AvgLikesPerPost = 66
-	//
-	//log.Println(fmt.Sprintf("Contender0 post modification\n%+v\n", c0))
-	//log.Println(fmt.Sprintf("Contender1 post modification\n%+v\n", c1))
-	//for _, v := range cs {
-	//	log.Println(fmt.Sprintf("Contenders post modification\n%+v\n", v))
-	//}
-	//
-	//err = cc.Update(cs)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	//// Test read and destroy
-	//c, aerr := cc.Read(10205178963326891)
-	//if aerr != nil {
-	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
-	//}
-	//log.Println(fmt.Sprintf("%+v", c))
-	//
-	//log.Println("Deleting")
-	//cc.Destroy([]int{10205178963326891})
-	//
-	//log.Println("Reading deleted contender")
-	//c, aerr = cc.Read(10205178963326891)
-	//if aerr != nil {
-	//	panic(fmt.Sprintf("%s\n%s", aerr, aerr.Err))
-	//}
-	//log.Println(fmt.Sprintf("%+v", c))
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
