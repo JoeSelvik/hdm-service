@@ -42,12 +42,16 @@ func main() {
 	//log.Println("found contenders:", len(con))
 
 	// Pull fb posts
-	posts, aerr := fh.PullPostsFromFb(config.StartTime)
+	posts, aerr := fh.PullPostsFromFb()
 	if aerr != nil {
 		panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
 	}
 	log.Println("found posts:", len(posts))
 	log.Printf("found posts: %+v\n", posts)
+
+	for _, p := range posts {
+		log.Println(p.PostedDate)
+	}
 
 	// Register http handlers
 	cc := &ContenderController{config: config, db: db, fh: &fh}

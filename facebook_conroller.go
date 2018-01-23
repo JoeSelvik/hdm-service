@@ -15,7 +15,7 @@ import (
 
 type Facebooker interface {
 	PullContendersFromFb() ([]*Contender, *ApplicationError)
-	PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError)
+	PullPostsFromFb() ([]Post, *ApplicationError)
 }
 
 // todo: only load with FB config options?
@@ -96,9 +96,7 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 }
 
 // PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
-//
-// todo: use start and end times
-func (fh FacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
+func (fh FacebookHandle) PullPostsFromFb() ([]Post, *ApplicationError) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
@@ -118,9 +116,8 @@ func (fh FacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *Applicat
 	}
 
 	var posts []Post
-	count := 1
 
-	// loop until a fb post's created_time is older than startDate
+	// loop until a fb post's created_time is older than config.StartTime
 Loop:
 	for {
 		results := paging.Data()
@@ -130,13 +127,19 @@ Loop:
 			var p Post
 			facebookPost := fb.Result(results[i]) // cast the var
 
-			// stop when post reaches startDate
+			// Parse post's created_time
 			t, err := time.Parse(GoTimeLayout, facebookPost.Get("created_time").(string))
 			if err != nil {
 				msg := "Failed to parse a fb post's postedDate"
 				return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 			}
-			if t.Before(startDate) {
+
+			// continue until post is after EndTime
+			if t.After(fh.config.EndTime) {
+				continue
+			}
+			// stop when post reaches startDate
+			if t.Before(fh.config.StartTime) {
 				break Loop
 			}
 
@@ -157,7 +160,6 @@ Loop:
 					}
 					p.Likes = append(p.Likes, lid)
 				}
-
 			} else {
 				p.Likes = []int{}
 			}
@@ -175,7 +177,6 @@ Loop:
 			log.Println("Reached the end of group feed")
 			break Loop
 		}
-		count++
 	}
 	return posts, nil
 }
