@@ -56,9 +56,11 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 
 	var postIds []int
 	for _, p := range posts {
+		likes := sliceOfIntsToString(p.Likes)
+
 		result, err := tx.Exec(q,
 			p.FbId, p.FbGroupId,
-			p.PostedDate, posts, p.Author, p.Likes)
+			p.PostedDate, p.Author, likes)
 		if err != nil {
 			msg := fmt.Sprintf("Couldn't create post: %+v", p)
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -79,7 +81,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
-	return postIds, &ApplicationError{Code: http.StatusNotImplemented}
+	return postIds, nil
 }
 
 // Read returns the post in the db for a given FbId.
@@ -116,7 +118,6 @@ func (pc *PostController) PopulatePostsTable() *ApplicationError {
 
 	// Get slice of post struct pointers from fb
 	posts, aerr := pc.fh.PullPostsFromFb()
-	log.Println("found posts:", len(posts))
 	if aerr != nil {
 		return aerr
 	}
@@ -128,9 +129,6 @@ func (pc *PostController) PopulatePostsTable() *ApplicationError {
 	}
 
 	// Populate Contenders table
-	for i, r := range postResources {
-		log.Printf("%d: %+v\n", i, r)
-	}
 	_, aerr = pc.Create(postResources)
 	if aerr != nil {
 		return aerr

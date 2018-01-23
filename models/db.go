@@ -18,7 +18,7 @@ type DB struct {
 // If the given name exists, rename it to *.old, overwrites any existing *.old db.
 func NewDB(dbPath string) (*DB, error) {
 	if _, err := os.Stat(dbPath); err == nil {
-		log.Println(dbPath, "existed, renaming to .old.")
+		log.Println("Previous test db existed, renaming to *.old")
 		err := os.Rename(dbPath, dbPath+".old")
 		if err != nil {
 			log.Printf("Error when renaming db: %s\n", err)

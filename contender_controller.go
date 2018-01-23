@@ -62,8 +62,8 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	// Insert each Contender into contenders table
 	var contenderIds []int
 	for _, c := range contenders {
-		posts := slicePostIdsToStringPosts(c.TotalPosts)
-		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
+		posts := sliceOfIntsToString(c.TotalPosts)
+		postsUsed := sliceOfIntsToString(c.PostsUsed)
 
 		result, err := tx.Exec(q,
 			c.FbId, c.FbGroupId,
@@ -121,12 +121,12 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 
 	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
 	// Split comma separated strings to slices of ints
-	totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
+	totalPosts, err := stringOfIntsToSliceOfInts(totalPostsString)
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
-	postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
+	postsUsed, err := stringOfIntsToSliceOfInts(postsUsedString)
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -179,8 +179,8 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 
 	// Iterate through each contender and update it in the db
 	for _, c := range contenders {
-		posts := slicePostIdsToStringPosts(c.TotalPosts)
-		postsUsed := slicePostIdsToStringPosts(c.PostsUsed)
+		posts := sliceOfIntsToString(c.TotalPosts)
+		postsUsed := sliceOfIntsToString(c.PostsUsed)
 
 		res, err := tx.Exec(q, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed, c.FbId)
 		if err != nil {
@@ -304,12 +304,12 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 		}
 
 		// Split comma separated strings to slices of ints
-		totalPosts, err := stringPostsToSlicePostIds(totalPostsString)
+		totalPosts, err := stringOfIntsToSliceOfInts(totalPostsString)
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
-		postsUsed, err := stringPostsToSlicePostIds(postsUsedString)
+		postsUsed, err := stringOfIntsToSliceOfInts(postsUsedString)
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -368,12 +368,12 @@ func (cc *ContenderController) UpdateContendersVariableDependentData() *Applicat
 	return nil
 }
 
-// stringPostsToSlicePostIds is a helper function that converts a string of ints to a slice of ints.
+// stringOfIntsToSliceOfInts is a helper function that converts a string of ints to a slice of ints.
 //
 // "1, 2, 3" to []int{1, 2, 3}
 // "1,2,3" will throw an error
 // returns []int{} if given string is ""
-func stringPostsToSlicePostIds(s string) ([]int, error) {
+func stringOfIntsToSliceOfInts(s string) ([]int, error) {
 	stringSlice := strings.Split(s, ", ")
 
 	var intSlice []int
@@ -391,12 +391,12 @@ func stringPostsToSlicePostIds(s string) ([]int, error) {
 	return intSlice, nil
 }
 
-// slicePostIdsToStringPosts is a helper function that converts a slice of post ids to a string of ids.
+// sliceOfIntsToString is a helper function that converts a slice of post ids to a string of ids.
 //
 // todo: recover() from panic()? is this possible?
 // todo: probably a better way to do this...
 // https://stackoverflow.com/questions/25025467/catching-panics-in-golang
-func slicePostIdsToStringPosts(slicePostIds []int) string {
+func sliceOfIntsToString(slicePostIds []int) string {
 	stringPosts := fmt.Sprint(slicePostIds)                     // [1 2 3] to "[1 2 3]"
 	splitStringPosts := strings.Split(stringPosts, " ")         // "[1 2 3]" to ["[1 2 3]"]
 	joinedStringPosts := strings.Join(splitStringPosts, ", ")   // ["[1 2 3]"] to "[1, 2, 3]"

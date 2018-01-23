@@ -55,17 +55,17 @@ func main() {
 	pc := &PostController{config: config, db: db, fh: &fh}
 	http.Handle(pc.Path(), pc)
 
-	// Create Contenders
-	//aerr = cc.PopulatePostsTable()
+	//// Create Contenders
+	//aerr := cc.PopulateContendersTable()
 	//if aerr != nil {
 	//	panic(fmt.Sprintf("Could not populate contenders: %s\n%s", aerr, aerr.Err))
 	//}
 
-	// Create Posts
-	aerr := pc.PopulatePostsTable()
-	if aerr != nil {
-		panic(fmt.Sprintf("Could not populate posts: %s\n%s", aerr, aerr.Err))
-	}
+	//// Create Posts
+	//aerr = pc.PopulatePostsTable()
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("Could not populate posts: %s\n%s", aerr, aerr.Err))
+	//}
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)

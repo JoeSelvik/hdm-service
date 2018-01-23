@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 )
 
 type fakeFacebookHandle struct{}
@@ -29,10 +28,10 @@ func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *Application
 	return contenders, nil
 }
 
-func (fh *fakeFacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
-	posts := []Post{
+func (fh *fakeFacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
+	posts := []*Post{
 		{
-			FbId: 1234,
+			FbId: "111_222",
 		},
 	}
 	return posts, nil
@@ -57,6 +56,7 @@ func setup() error {
 		log.Printf("Could not open test db: %s\n", err)
 		return err
 	}
+	log.Printf("Using new test db: %s", config.DbTestPath)
 
 	// Execute each command in db setup script
 	for _, commands := range cmd {
@@ -208,7 +208,7 @@ func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		val, err := stringPostsToSlicePostIds(tt.inString)
+		val, err := stringOfIntsToSliceOfInts(tt.inString)
 		if tt.outError != nil { // If expecting error...
 			if err == nil {
 				t.Errorf("Invalid '%s' string ids should generate an error.", tt.inString)
@@ -237,7 +237,7 @@ func TestContenderController_slicePostIdsToStringPosts(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := slicePostIdsToStringPosts(tt.inSlice)
+		result := sliceOfIntsToString(tt.inSlice)
 		if result != tt.outString {
 			t.Errorf("Slice '%d' returned incorrect '%s'", tt.inSlice, tt.outString)
 		}
