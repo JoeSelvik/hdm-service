@@ -94,7 +94,7 @@
 
 
 # START
-* finish create post
+* finish create post, inserting likes and serializing
 * PullPostsFromFb and Create and ReadCollection
 * UpdateContendersVariableDependentData
 

@@ -15,7 +15,7 @@ import (
 
 type Facebooker interface {
 	PullContendersFromFb() ([]*Contender, *ApplicationError)
-	PullPostsFromFb() ([]Post, *ApplicationError)
+	PullPostsFromFb() ([]*Post, *ApplicationError)
 }
 
 // todo: only load with FB config options?
@@ -96,7 +96,7 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 }
 
 // PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
-func (fh FacebookHandle) PullPostsFromFb() ([]Post, *ApplicationError) {
+func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
 	// Get the group feed
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
@@ -115,7 +115,7 @@ func (fh FacebookHandle) PullPostsFromFb() ([]Post, *ApplicationError) {
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
-	var posts []Post
+	var posts []*Post
 
 	// loop until a fb post's created_time is older than config.StartTime
 Loop:
@@ -165,7 +165,7 @@ Loop:
 			}
 
 			// save the new Post
-			posts = append(posts, p)
+			posts = append(posts, &p)
 		}
 
 		noMore, err := paging.Next()

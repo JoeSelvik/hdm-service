@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/JoeSelvik/hdm-service/models"
+	"log"
 	"net/http"
 )
 
@@ -32,8 +33,7 @@ func (pc *PostController) DBTableName() string {
 func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var posts []*Post
-	for i := 0; i < len(m); i++ {
-		p := m[i]
+	for _, p := range m {
 		posts = append(posts, p.(*Post))
 	}
 
@@ -41,7 +41,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 	q := fmt.Sprintf(`
 	INSERT INTO %s (
 		fb_id, fb_group_id,
-		posted_date, author, total_likes,
+		posted_date, author, likes,
 		created_at, updated_at
 	) values (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`, pc.DBTableName())
@@ -104,4 +104,37 @@ func (pc *PostController) Destroy(ids []int) *ApplicationError {
 // ReadCollection returns all posts in the db.
 func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 	return nil, &ApplicationError{Code: http.StatusNotImplemented}
+}
+
+// /////
+// Non API methods and helper functions
+// todo: does this section belong?
+// /////
+
+func (pc *PostController) PopulatePostsTable() *ApplicationError {
+	log.Println("Pulling posts from facebook and creating in db")
+
+	// Get slice of post struct pointers from fb
+	posts, aerr := pc.fh.PullPostsFromFb()
+	log.Println("found posts:", len(posts))
+	if aerr != nil {
+		return aerr
+	}
+
+	// Convert each contender struct ptr to Resource interface
+	postResources := make([]Resource, len(posts))
+	for i, v := range posts {
+		postResources[i] = Resource(v)
+	}
+
+	// Populate Contenders table
+	for i, r := range postResources {
+		log.Printf("%d: %+v\n", i, r)
+	}
+	_, aerr = pc.Create(postResources)
+	if aerr != nil {
+		return aerr
+	}
+
+	return nil
 }

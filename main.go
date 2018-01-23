@@ -35,30 +35,37 @@ func main() {
 	fh := FacebookHandle{config: config}
 
 	//// Pull fb contenders
-	//con, aerr := PullContendersFromFb()
+	//contenders, aerr := PullContendersFromFb()
 	//if aerr != nil {
 	//	panic("Couldn't get Facebook contenders")
 	//}
-	//log.Println("found contenders:", len(con))
+	//log.Println("found contenders:", len(contenders))
 
-	// Pull fb posts
-	posts, aerr := fh.PullPostsFromFb()
-	if aerr != nil {
-		panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
-	}
-	log.Println("found posts:", len(posts))
-	log.Printf("found posts: %+v\n", posts)
-
-	for _, p := range posts {
-		log.Println(p.PostedDate)
-	}
+	//// Pull fb posts
+	//posts, aerr := fh.PullPostsFromFb()
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
+	//}
+	//log.Println("found posts:", len(posts))
 
 	// Register http handlers
 	cc := &ContenderController{config: config, db: db, fh: &fh}
 	http.Handle(cc.Path(), cc)
 
-	pc := &PostController{config: config, db: db}
+	pc := &PostController{config: config, db: db, fh: &fh}
 	http.Handle(pc.Path(), pc)
+
+	// Create Contenders
+	//aerr = cc.PopulatePostsTable()
+	//if aerr != nil {
+	//	panic(fmt.Sprintf("Could not populate contenders: %s\n%s", aerr, aerr.Err))
+	//}
+
+	// Create Posts
+	aerr := pc.PopulatePostsTable()
+	if aerr != nil {
+		panic(fmt.Sprintf("Could not populate posts: %s\n%s", aerr, aerr.Err))
+	}
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
