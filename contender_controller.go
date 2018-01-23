@@ -268,14 +268,12 @@ func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 
 // ReadCollection returns all Contenders in the db.
 func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) {
-	log.Println("Read collection: Contenders")
-
-	// Grab contender entries from table
-	rows, err := cc.db.Query("SELECT * FROM contenders")
+	// Grab rows from table
+	rows, err := cc.db.Query(fmt.Sprintf("SELECT * FROM %s", cc.DBTableName()))
 	switch {
 	case err == sql.ErrNoRows:
-		msg := fmt.Sprintf("None of that kind of resource here!")
-		return nil, &ApplicationError{Msg: msg, Code: http.StatusNoContent}
+		log.Println("Contenders ReadCollection: no rows in table.")
+		return []Resource{}, nil
 	case err != nil:
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -330,7 +328,6 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 
 		contenders = append(contenders, &c)
 	}
-
 	return contenders, nil
 }
 

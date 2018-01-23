@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"net/http"
+	"time"
 )
 
 type PostController struct {
@@ -105,7 +107,55 @@ func (pc *PostController) Destroy(ids []int) *ApplicationError {
 
 // ReadCollection returns all posts in the db.
 func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
-	return nil, &ApplicationError{Code: http.StatusNotImplemented}
+	// Grab rows from table
+	rows, err := pc.db.Query(fmt.Sprintf("SELECT * FROM %s", pc.DBTableName()))
+	switch {
+	case err == sql.ErrNoRows:
+		log.Println("Contenders ReadCollection: no rows in table.")
+		return []Resource{}, nil
+	case err != nil:
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+	}
+	defer rows.Close()
+
+	// Create a Contender from each row
+	posts := make([]Resource, 0) // Container for the Resources we're about to return
+	for rows.Next() {
+		var fbId string
+		var fbGroupId int
+		var postedDate time.Time
+		var author string
+		var likesString string
+		var createdAt time.Time
+		var updatedAt time.Time
+
+		err := rows.Scan(&fbId, &fbGroupId, &postedDate, &author, &likesString, &createdAt, &updatedAt)
+		if err != nil {
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+
+		// Split comma separated strings to slices of ints
+		likes, err := stringOfIntsToSliceOfInts(likesString)
+		if err != nil {
+			msg := "Something is wrong with our database - we'll be back up soon!"
+			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+		}
+
+		c := Post{
+			FbId:       fbId,
+			FbGroupId:  fbGroupId,
+			PostedDate: postedDate,
+			Author:     author,
+			Likes:      likes,
+			CreatedAt:  createdAt,
+			UpdatedAt:  updatedAt,
+		}
+
+		posts = append(posts, &c)
+	}
+	return posts, nil
 }
 
 // /////

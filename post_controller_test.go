@@ -15,9 +15,10 @@ func TestPostController_Create(t *testing.T) {
 	pc := &PostController{db: db}
 
 	// Create a post struct and convert it to a resource interface
+	testAuthor := "Joe Selvik"
 	posts := []*Post{
 		{
-			Author: "Joe Selvik",
+			Author: testAuthor,
 			FbId:   "666_999"},
 	}
 	postResources := make([]Resource, len(posts))
@@ -31,5 +32,21 @@ func TestPostController_Create(t *testing.T) {
 	}
 	if len(cids) != 1 {
 		t.Fatal("Should only get back a single id")
+	}
+
+	// Read all posts
+	resources, aerr := pc.ReadCollection()
+	if aerr != nil {
+		t.Fatal("Unable to read collection of posts")
+	}
+	var lookup *Post
+	for _, c := range resources {
+		if c.(*Post).Author == testAuthor {
+			lookup = c.(*Post)
+			break
+		}
+	}
+	if lookup.Author != testAuthor {
+		t.Fatal("Unable to find post in ReadCollection")
 	}
 }

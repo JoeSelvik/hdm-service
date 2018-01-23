@@ -108,9 +108,10 @@ func TestContenderController_Create(t *testing.T) {
 	cc := &ContenderController{db: db}
 
 	// Create a Contender struct and convert it to a Resource interface
+	testName := "Matt Anderson"
 	contenders := []*Contender{
 		{
-			Name: "matt anderson",
+			Name: testName,
 			FbId: 666},
 	}
 	contenderResources := make([]Resource, len(contenders))
@@ -129,16 +130,16 @@ func TestContenderController_Create(t *testing.T) {
 	// Read all contenders
 	resources, aerr := cc.ReadCollection()
 	if aerr != nil {
-		t.Fatal("Unable to read collection")
+		t.Fatal("Unable to read collection of contenders")
 	}
 	var lookup *Contender
 	for _, c := range resources {
-		if c.(*Contender).Name == "matt anderson" {
+		if c.(*Contender).Name == testName {
 			lookup = c.(*Contender)
 			break
 		}
 	}
-	if lookup.Name != "matt anderson" {
+	if lookup.Name != testName {
 		t.Fatal("Unable to find contender in ReadCollection")
 	}
 
@@ -156,7 +157,7 @@ func TestContenderController_Create(t *testing.T) {
 		t.Fatalf("Error when reading resource: %s\n", aerr)
 	}
 	contender := resource.(*Contender)
-	if contender.Name != "matt anderson" {
+	if contender.Name != testName {
 		t.Fatal("Read did not find updated contender")
 	}
 
