@@ -16,7 +16,7 @@
 * FbGroupId int                   --> INTEGER
 * PostedDate time.Time            --> DATETIME
 * Author string                   --> TEXT
-* TotalLikes int                  --> INTEGER
+* Likes int                       --> BLOB
 * CreatedAt time.Time             --> DATETIME
 * UpdatedAt time.Time             --> DATETIME
 

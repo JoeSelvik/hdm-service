@@ -94,7 +94,9 @@
 
 
 # START
-* create post
+* p.Likes Likes or p.TotalLikes int
+* fix pull facebook likes
+* finish create post
 * PullPostsFromFb and Create and ReadCollection
 * UpdateContendersVariableDependentData
 

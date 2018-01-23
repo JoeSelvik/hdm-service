@@ -8,14 +8,14 @@ import (
 )
 
 type Contender struct {
-	FbId               int `facebook:",required"`
-	FbGroupId          int
-	Name               string
-	TotalPosts         []int
-	AvgLikesPerPost    float64 // todo: or float32?
-	TotalLikesReceived int
-	TotalLikesGiven    int
-	PostsUsed          []int
+	FbId               int       `json:"fb_id" facebook:",required"`
+	FbGroupId          int       `json:"fb_group_id"`
+	Name               string    `json:"name"`
+	TotalPosts         []int     `json:"total_posts"`
+	AvgLikesPerPost    float64   `json:"avg_likes_per_post"` // todo: or float32?
+	TotalLikesReceived int       `json:"total_likes_received"`
+	TotalLikesGiven    int       `json:"total_likes_given"`
+	PostsUsed          []int     `json:"posts_used"`
 	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -99,9 +99,9 @@ func UpdateHDMContenderDependentData() {
 		contenders[poster.Name] = *poster
 
 		// For each Post like, give a likes given to the contenders
-		for j := 0; j < len(p.Likes.Data); j++ {
+		for j := 0; j < len(p.Likes); j++ {
 			var liker *Contender
-			if val, ok := contenders[p.Likes.Data[j].Name]; ok {
+			if val, ok := contenders["name"]; ok {
 				liker = &val
 			} else {
 				//liker, _ = GetContenderByUsername(db, p.Likes.Data[j].Name)

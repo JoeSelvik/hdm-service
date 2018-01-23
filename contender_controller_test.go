@@ -32,7 +32,7 @@ func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *Application
 func (fh *fakeFacebookHandle) PullPostsFromFb(startDate time.Time) ([]Post, *ApplicationError) {
 	posts := []Post{
 		{
-			Id: "1234",
+			FbId: 1234,
 		},
 	}
 	return posts, nil
@@ -98,7 +98,7 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
-// Create, ReadCollection, Update, Read, Destroy, Read contender; very simple test.
+// Create, ReadCollection, Update, Read, Destroy, Read contender.
 func TestContenderController_Create(t *testing.T) {
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)

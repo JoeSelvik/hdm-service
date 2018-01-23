@@ -8,13 +8,13 @@ import (
 )
 
 type Post struct {
-	FbId       int `facebook:",required"`
-	FbGroupId  int
-	PostedDate time.Time
-	Author     string
-	TotalLikes int
+	FbId       string    `json:"fb_id" facebook:",required"`
+	FbGroupId  int       `json:"fb_group_id"`
+	PostedDate time.Time `json:"posted_date"`
+	Author     string    `json:"author"`
+	Likes      []int     `json:"likes"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at" db:"created_at"`
 }
 
 // SetCreatedAt will set the CreatedAt attribute of a User struct
@@ -25,23 +25,6 @@ func (p *Post) SetCreatedAt(t time.Time) {
 // SetUpdatedAt will set the UpdatedAt attribute of a User struct
 func (p *Post) SetUpdatedAt(t time.Time) {
 	p.UpdatedAt = t
-}
-
-type Like struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type Likes struct {
-	Data []Like `json:"data"`
-}
-
-func (p *Post) DBTableName() string {
-	return "posts"
-}
-
-func (p *Post) Path() string {
-	return "/posts/"
 }
 
 func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
@@ -60,7 +43,7 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		return 0, err
 	}
 
-	result, err := tx.Exec(q, p.Id, p.PostedDate, p.Author, likes)
+	result, err := tx.Exec(q, p.FbId, p.PostedDate, p.Author, likes)
 	if err != nil {
 		return 0, err
 	}
@@ -151,18 +134,18 @@ func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 			return nil, err
 		}
 
-		likes := Likes{}
-		json.Unmarshal([]byte(strLikes), &likes)
+		//likes := Likes{}
+		//json.Unmarshal([]byte(strLikes), &likes)
 
 		p := Post{
-			Id:         id,
-			PostedDate: postedDate,
-			Author:     author,
-			Likes:      likes,
-			CreatedAt:  createdAt,
-			UpdatedAt:  updatedAt,
+			FbId: id,
+			//PostedDate: postedDate,
+			Author: author,
+			//Likes:      likes,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
 		}
-		posts[p.Id] = p
+		posts[p.FbId] = p
 	}
 
 	err = rows.Err()

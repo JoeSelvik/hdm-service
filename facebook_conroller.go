@@ -77,6 +77,7 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 			}
 
 			c.FbId = id
+			c.FbGroupId = fh.config.FbGroupId
 			c.Name = facebookContender.Get("name").(string)
 			contenders = append(contenders, &c)
 		}
@@ -130,8 +131,7 @@ Loop:
 			facebookPost := fb.Result(results[i]) // cast the var
 
 			// stop when post reaches startDate
-			p.PostedDate = facebookPost.Get("created_time").(string)
-			t, err := time.Parse(GoTimeLayout, p.PostedDate)
+			t, err := time.Parse(GoTimeLayout, facebookPost.Get("created_time").(string))
 			if err != nil {
 				msg := "Failed to parse a fb post's postedDate"
 				return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -140,24 +140,26 @@ Loop:
 				break Loop
 			}
 
-			p.Id = facebookPost.Get("id").(string)
+			p.FbId = facebookPost.Get("id").(string) // a post's id has an _
+			p.FbGroupId = fh.config.FbGroupId
 			p.Author = facebookPost.Get("from.name").(string)
-			p.PostedDate = t.String()
+			p.PostedDate = t
 
-			// unload Likes data into a Like struct
+			// extract fb_ids of contenders who liked post
 			if facebookPost.Get("likes.data") != nil {
-				var like_list []Like
-				numLikes := facebookPost.Get("likes.data").([]interface{})
-				for j := 0; j < len(numLikes); j++ {
-					var l Like
-					l.Id = numLikes[j].(map[string]interface{})["id"].(string)
-					l.Name = numLikes[j].(map[string]interface{})["name"].(string)
-					like_list = append(like_list, l)
+				postLikes := facebookPost.Get("likes.data").([]interface{})
+				for _, l := range postLikes {
+					// Convert interface to its real string value, then the string to an int.
+					lid, err := strconv.Atoi(l.(map[string]interface{})["id"].(string))
+					if err != nil {
+						msg := "Failed to convert a posts liker id to an int"
+						return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+					}
+					p.Likes = append(p.Likes, lid)
 				}
-				p.Likes = Likes{Data: like_list}
 
 			} else {
-				p.Likes = Likes{Data: nil}
+				p.Likes = []int{}
 			}
 
 			// save the new Post

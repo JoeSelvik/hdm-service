@@ -58,7 +58,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 	for _, p := range posts {
 		result, err := tx.Exec(q,
 			p.FbId, p.FbGroupId,
-			p.PostedDate, posts, p.Author, p.TotalLikes)
+			p.PostedDate, posts, p.Author, p.Likes)
 		if err != nil {
 			msg := fmt.Sprintf("Couldn't create post: %+v", p)
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}

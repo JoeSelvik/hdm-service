@@ -42,15 +42,19 @@ func main() {
 	//log.Println("found contenders:", len(con))
 
 	// Pull fb posts
-	posts, aerr := PullPostsFromFb(config.StartTime)
+	posts, aerr := fh.PullPostsFromFb(config.StartTime)
 	if aerr != nil {
-		panic("Couldn't get Facebook posts")
+		panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
 	}
 	log.Println("found posts:", len(posts))
+	log.Printf("found posts: %+v\n", posts)
 
 	// Register http handlers
 	cc := &ContenderController{config: config, db: db, fh: &fh}
 	http.Handle(cc.Path(), cc)
+
+	pc := &PostController{config: config, db: db}
+	http.Handle(pc.Path(), pc)
 
 	// Register speak handle
 	http.HandleFunc("/speak/", speakHandle)
