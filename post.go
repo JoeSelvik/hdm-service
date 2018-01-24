@@ -11,7 +11,7 @@ type Post struct {
 	FbId       string    `json:"fb_id" facebook:",required"`
 	FbGroupId  int       `json:"fb_group_id"`
 	PostedDate time.Time `json:"posted_date"`
-	Author     string    `json:"author"`
+	AuthorFbId int       `json:"author_fb_id"`
 	Likes      []int     `json:"likes"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at" db:"created_at"`
@@ -32,7 +32,7 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 	INSERT INTO posts (
 		Id,
 		PostedDate,
-		Author,
+		AuthorFbId,
 		Likes,
 		CreatedAt,
 		UpdatedAt
@@ -43,7 +43,7 @@ func (p *Post) CreatePost(tx *sql.Tx) (int64, error) {
 		return 0, err
 	}
 
-	result, err := tx.Exec(q, p.FbId, p.PostedDate, p.Author, likes)
+	result, err := tx.Exec(q, p.FbId, p.PostedDate, p.AuthorFbId, likes)
 	if err != nil {
 		return 0, err
 	}
@@ -64,7 +64,7 @@ func CreatePostsTable(startDate time.Time, db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS posts(
 		Id TEXT NOT NULL,
 		PostedDate DATETIME,
-		Author TEXT,
+		AuthorFbId TEXT,
 		Likes BLOB,
 		CreatedAt DATETIME,
 		UpdatedAt DATETIME
@@ -123,7 +123,7 @@ func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 	for rows.Next() {
 		var id string
 		var postedDate string // todo: should this be a time.Time?
-		var author string
+		var author int
 		var strLikes string // sqlite blob later to be unmarshalled
 		var createdAt time.Time
 		var updatedAt time.Time
@@ -140,7 +140,7 @@ func GetHDMPosts(db *sql.DB) (map[string]Post, error) {
 		p := Post{
 			FbId: id,
 			//PostedDate: postedDate,
-			Author: author,
+			AuthorFbId: author,
 			//Likes:      likes,
 			CreatedAt: createdAt,
 			UpdatedAt: updatedAt,

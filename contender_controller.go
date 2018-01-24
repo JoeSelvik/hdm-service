@@ -361,9 +361,27 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	return nil
 }
 
-func (cc *ContenderController) UpdateContendersVariableDependentData() *ApplicationError {
-	return nil
-}
+//
+//func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostController) *ApplicationError {
+//	postResources, aerr := pc.ReadCollection()
+//	if aerr != nil {
+//		log.Printf("Failed pc.ReadCollection: %s\n", aerr.Msg)
+//		return aerr
+//	}
+//	var posts []*Post
+//	for _, p := range postResources {
+//		posts = append(posts, p.(*Post))
+//	}
+//	contendersToUpdate := make(map[int]Contender)
+//
+//	for _, p := range posts {
+//		if contendersToUpdate[p.AuthorFbId] != nil {
+//
+//		}
+//	}
+//
+//	return nil
+//}
 
 // stringOfIntsToSliceOfInts is a helper function that converts a string of ints to a slice of ints.
 //
@@ -372,7 +390,6 @@ func (cc *ContenderController) UpdateContendersVariableDependentData() *Applicat
 // returns []int{} if given string is ""
 func stringOfIntsToSliceOfInts(s string) ([]int, error) {
 	stringSlice := strings.Split(s, ", ")
-
 	var intSlice []int
 	if stringSlice[0] != "" {
 		intSlice = make([]int, len(stringSlice))

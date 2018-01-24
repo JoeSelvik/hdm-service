@@ -74,14 +74,14 @@ func UpdateHDMContenderDependentData() {
 
 	// key, value: Post.Id, Post
 	for _, p := range posts {
-		// log.Println(fmt.Sprintf("Updating %s's post, %v", p.Author, p.Id))
+		// log.Println(fmt.Sprintf("Updating %s's post, %v", p.AuthorFbId, p.Id))
 
 		// Grab contender from db if it has not been updated yet
 		var poster *Contender
-		if val, ok := contenders[p.Author]; ok {
+		if val, ok := contenders["author_fb_id"]; ok {
 			poster = &val
 		} else {
-			//_, err := GetContenderByUsername(db, p.Author)
+			//_, err := GetContenderByUsername(db, p.AuthorFbId)
 			//if err != nil {
 			//	// if post's author is no longer in the herp, skip it
 			//	continue

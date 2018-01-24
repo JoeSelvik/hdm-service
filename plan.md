@@ -94,7 +94,8 @@
 
 
 # START
-* pc.ReadCollection
+* should p.Author be a contender? A contender.FbId? Or stay a string?
+** Consider case where Contender no longer exists
 * UpdateContendersVariableDependentData
 
 # HDM Qs

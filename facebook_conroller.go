@@ -145,7 +145,7 @@ Loop:
 
 			p.FbId = facebookPost.Get("id").(string) // a post's id has an _
 			p.FbGroupId = fh.config.FbGroupId
-			p.Author = facebookPost.Get("from.name").(string)
+			p.AuthorFbId = facebookPost.Get("from.id").(int)
 			p.PostedDate = t
 
 			// extract fb_ids of contenders who liked post

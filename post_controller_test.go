@@ -15,11 +15,11 @@ func TestPostController_Create(t *testing.T) {
 	pc := &PostController{db: db}
 
 	// Create a post struct and convert it to a resource interface
-	testAuthor := "Joe Selvik"
+	testAuthorId := 1225
 	posts := []*Post{
 		{
-			Author: testAuthor,
-			FbId:   "666_999"},
+			AuthorFbId: testAuthorId,
+			FbId:       "666_999"},
 	}
 	postResources := make([]Resource, len(posts))
 	for i, v := range posts {
@@ -41,12 +41,12 @@ func TestPostController_Create(t *testing.T) {
 	}
 	var lookup *Post
 	for _, c := range resources {
-		if c.(*Post).Author == testAuthor {
+		if c.(*Post).AuthorFbId == testAuthorId {
 			lookup = c.(*Post)
 			break
 		}
 	}
-	if lookup.Author != testAuthor {
+	if lookup.AuthorFbId != testAuthorId {
 		t.Fatal("Unable to find post in ReadCollection")
 	}
 }

@@ -43,7 +43,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 	q := fmt.Sprintf(`
 	INSERT INTO %s (
 		fb_id, fb_group_id,
-		posted_date, author, likes,
+		posted_date, author_fb_id, likes,
 		created_at, updated_at
 	) values (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`, pc.DBTableName())
@@ -62,7 +62,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 
 		result, err := tx.Exec(q,
 			p.FbId, p.FbGroupId,
-			p.PostedDate, p.Author, likes)
+			p.PostedDate, p.AuthorFbId, likes)
 		if err != nil {
 			msg := fmt.Sprintf("Couldn't create post: %+v", p)
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -125,7 +125,7 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 		var fbId string
 		var fbGroupId int
 		var postedDate time.Time
-		var author string
+		var author int
 		var likesString string
 		var createdAt time.Time
 		var updatedAt time.Time
@@ -147,7 +147,7 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 			FbId:       fbId,
 			FbGroupId:  fbGroupId,
 			PostedDate: postedDate,
-			Author:     author,
+			AuthorFbId: author,
 			Likes:      likes,
 			CreatedAt:  createdAt,
 			UpdatedAt:  updatedAt,

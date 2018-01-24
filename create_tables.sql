@@ -15,7 +15,7 @@ CREATE TABLE posts (
   fb_id INTEGER,
   fb_group_id INTEGER,
   posted_date DATETIME,
-  author TEXT,
+  author_fb_id INTEGER,
   likes BLOB,
   created_at DATETIME,
   updated_at DATETIME
