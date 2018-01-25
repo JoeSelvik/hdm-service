@@ -71,9 +71,7 @@
   * PullPostsFromFb()
 
 * UpdateContendersVariableDependentData()
-  * pc.GetPosts()
 * UpdateContendersIndependantData()
-  * cc.GetContenders()
 
 * CreateBracket()
   * CreateTeams()
@@ -94,9 +92,8 @@
 
 
 # START
-* should p.Author be a contender? A contender.FbId? Or stay a string?
-** Consider case where Contender no longer exists
-* UpdateContendersVariableDependentData
+* run on entire feed history, deal with when contenders don't exist
+* a UT for UpdateContendersVariableDependentData
 
 # HDM Qs
 * where to get and store a Post's permalink_url?

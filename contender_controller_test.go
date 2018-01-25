@@ -103,7 +103,7 @@ func TestContenderController_Create(t *testing.T) {
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
-		t.Fatal("Could not open test db")
+		t.Fatalf("Could not open test db: %s\n", err)
 	}
 	cc := &ContenderController{db: db}
 
@@ -121,7 +121,7 @@ func TestContenderController_Create(t *testing.T) {
 
 	cids, aerr := cc.Create(contenderResources)
 	if aerr != nil {
-		t.Fatal("Should not error when creating contender")
+		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 	if len(cids) != 1 {
 		t.Fatal("Should only get back a single id")
@@ -130,7 +130,7 @@ func TestContenderController_Create(t *testing.T) {
 	// Read all contenders
 	resources, aerr := cc.ReadCollection()
 	if aerr != nil {
-		t.Fatal("Unable to read collection of contenders")
+		t.Fatalf("Unable to read collection of contenders: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 	var lookup *Contender
 	for _, c := range resources {
@@ -144,17 +144,17 @@ func TestContenderController_Create(t *testing.T) {
 	}
 
 	// Update contender, convert to slice of Resources
-	lookup.PostsUsed = []int{1, 2, 3}
+	lookup.PostsUsed = []string{"111_222", "333_444"}
 	lookupResource := Resource(lookup)
 	aerr = cc.Update([]Resource{lookupResource})
 	if aerr != nil {
-		t.Fatalf("Error when updating resource: %s\n", aerr)
+		t.Fatalf("Error when updating resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 
 	// Read the updated contender
 	resource, aerr := cc.Read(666)
 	if aerr != nil {
-		t.Fatalf("Error when reading resource: %s\n", aerr)
+		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 	contender := resource.(*Contender)
 	if contender.Name != testName {
@@ -164,11 +164,11 @@ func TestContenderController_Create(t *testing.T) {
 	// Destroy the contender
 	aerr = cc.Destroy([]int{666})
 	if aerr != nil {
-		t.Fatalf("Error when destroying resource: %s\n", aerr)
+		t.Fatalf("Error when destroying resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 	_, aerr = cc.Read(666)
 	if aerr == nil {
-		t.Fatalf("Should find error when reading non-existent resource: %s\n", aerr)
+		t.Fatalf("Should find error when reading non-existent resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 }
 
@@ -177,14 +177,14 @@ func TestContenderController_PopulateContendersTable(t *testing.T) {
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
-		t.Fatal("Could not open test db")
+		t.Fatalf("Could not open test db: %s\n", err)
 	}
 	fh := fakeFacebookHandle{}
 	cc := &ContenderController{fh: &fh, db: db}
 
 	aerr := cc.PopulateContendersTable()
 	if aerr != nil {
-		t.Fatalf("Error when calling PopulateContendersTable: %s\n%s", aerr, aerr.Err)
+		t.Fatalf("Error when calling PopulateContendersTable: %s\n%s\n", aerr, aerr.Err)
 	}
 
 	contenders, aerr := cc.ReadCollection()

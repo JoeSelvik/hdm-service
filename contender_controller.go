@@ -46,7 +46,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	q := fmt.Sprintf(`
 	INSERT INTO %s (
 		fb_id, fb_group_id,
-		name, total_posts, avg_likes_per_post, total_likes_received, total_likes_given, posts_used,
+		name, posts, avg_likes_per_post, total_likes_received, total_likes_given, posts_used,
 		created_at, updated_at
 	) values (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`, cc.DBTableName())
@@ -62,8 +62,8 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	// Insert each Contender into contenders table
 	var contenderIds []int
 	for _, c := range contenders {
-		posts := sliceOfIntsToString(c.TotalPosts)
-		postsUsed := sliceOfIntsToString(c.PostsUsed)
+		posts := strings.Join(c.Posts[:], ", ")
+		postsUsed := strings.Join(c.PostsUsed[:], ", ")
 
 		result, err := tx.Exec(q,
 			c.FbId, c.FbGroupId,
@@ -93,8 +93,6 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 
 // Read returns the contender in the db for a given FbId.
 func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
-	log.Println("Read: Contender", fbId)
-
 	// todo: better way to shorten line of code and reuse in ReadCollection?
 	var fbGroupId int
 	var name string
@@ -121,23 +119,15 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 
 	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
 	// Split comma separated strings to slices of ints
-	totalPosts, err := stringOfIntsToSliceOfInts(totalPostsString)
-	if err != nil {
-		msg := "Something is wrong with our database - we'll be back up soon!"
-		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
-	}
-	postsUsed, err := stringOfIntsToSliceOfInts(postsUsedString)
-	if err != nil {
-		msg := "Something is wrong with our database - we'll be back up soon!"
-		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
-	}
+	totalPosts := strings.Split(totalPostsString, ", ")
+	postsUsed := strings.Split(postsUsedString, ", ")
 
 	// Create Contender
 	c := Contender{
 		FbId:               fbId,
 		FbGroupId:          fbGroupId,
 		Name:               name,
-		TotalPosts:         totalPosts,
+		Posts:              totalPosts,
 		AvgLikesPerPost:    float64(avgLikesPerPost),
 		TotalLikesReceived: totalLikesReceived,
 		TotalLikesGiven:    totalLikesGiven,
@@ -151,7 +141,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 
 // Update writes the db column value for each variable Contender parameter.
 //
-// Writes TotalPosts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
+// Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
 // todo: test when fb_id does not exist
 func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
@@ -172,15 +162,15 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	// Create the SQL query
 	q := fmt.Sprintf(`
 	UPDATE %s SET
-		total_posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?, posts_used=?,
+		posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?, posts_used=?,
 		updated_at=CURRENT_TIMESTAMP
 		WHERE fb_id=?
 	`, cc.DBTableName())
 
 	// Iterate through each contender and update it in the db
 	for _, c := range contenders {
-		posts := sliceOfIntsToString(c.TotalPosts)
-		postsUsed := sliceOfIntsToString(c.PostsUsed)
+		posts := strings.Join(c.Posts[:], ", ")
+		postsUsed := strings.Join(c.PostsUsed[:], ", ")
 
 		res, err := tx.Exec(q, posts, c.AvgLikesPerPost, c.TotalLikesReceived, c.TotalLikesGiven, postsUsed, c.FbId)
 		if err != nil {
@@ -302,22 +292,14 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 		}
 
 		// Split comma separated strings to slices of ints
-		totalPosts, err := stringOfIntsToSliceOfInts(totalPostsString)
-		if err != nil {
-			msg := "Something is wrong with our database - we'll be back up soon!"
-			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
-		}
-		postsUsed, err := stringOfIntsToSliceOfInts(postsUsedString)
-		if err != nil {
-			msg := "Something is wrong with our database - we'll be back up soon!"
-			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
-		}
+		totalPosts := strings.Split(totalPostsString, ", ")
+		postsUsed := strings.Split(postsUsedString, ", ")
 
 		c := Contender{
 			FbId:               fbId,
 			FbGroupId:          fbGroupId,
 			Name:               name,
-			TotalPosts:         totalPosts,
+			Posts:              totalPosts,
 			AvgLikesPerPost:    float64(avgLikesPerPost),
 			TotalLikesReceived: totalLikesReceived,
 			TotalLikesGiven:    totalLikesGiven,
@@ -361,27 +343,83 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	return nil
 }
 
-//
-//func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostController) *ApplicationError {
-//	postResources, aerr := pc.ReadCollection()
-//	if aerr != nil {
-//		log.Printf("Failed pc.ReadCollection: %s\n", aerr.Msg)
-//		return aerr
-//	}
-//	var posts []*Post
-//	for _, p := range postResources {
-//		posts = append(posts, p.(*Post))
-//	}
-//	contendersToUpdate := make(map[int]Contender)
-//
-//	for _, p := range posts {
-//		if contendersToUpdate[p.AuthorFbId] != nil {
-//
-//		}
-//	}
-//
-//	return nil
-//}
+func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostController) *ApplicationError {
+	log.Println("Updating contender VDD in db")
+
+	// Get a slice of Posts
+	postResources, aerr := pc.ReadCollection()
+	if aerr != nil {
+		log.Printf("Failed pc.ReadCollection: %s\n", aerr.Msg)
+		return aerr
+	}
+	var posts []*Post
+	for _, p := range postResources {
+		posts = append(posts, p.(*Post))
+	}
+
+	// Create a map of contenders to update for each post
+	contendersToUpdate := make(map[int]Contender)
+	for _, p := range posts {
+		// Get Contender who authored post
+		var author *Contender
+		if val, okay := contendersToUpdate[p.AuthorFbId]; okay {
+			author = &val
+		} else {
+			authorResource, aerr := cc.Read(p.AuthorFbId)
+			if aerr != nil {
+				log.Printf("Failed to read author contender: %d", p.AuthorFbId)
+				msg := "Something is wrong with our database - we'll be back up soon!"
+				return &ApplicationError{Msg: msg, Code: http.StatusInternalServerError}
+			}
+			author = authorResource.(*Contender)
+		}
+
+		// Update author's vd
+		author.Posts = append(author.Posts, p.FbId)
+		author.TotalLikesReceived = author.TotalLikesReceived + len(p.Likes)
+		contendersToUpdate[author.FbId] = *author
+
+		// For each like, update contender's likes given
+		for _, l := range p.Likes {
+			var liker *Contender
+			if val, okay := contendersToUpdate[l]; okay {
+				liker = &val
+			} else {
+				likerResource, aerr := cc.Read(l)
+				if aerr != nil {
+					log.Printf("Failed to read liker contender: %d", l)
+					msg := "Something is wrong with our database - we'll be back up soon!"
+					return &ApplicationError{Msg: msg, Code: http.StatusInternalServerError}
+				}
+				liker = likerResource.(*Contender)
+			}
+			liker.TotalLikesGiven = liker.TotalLikesGiven + 1
+			contendersToUpdate[liker.FbId] = *liker
+		}
+	}
+
+	// Grab each contender from the map of to be updated, convert to ptr
+	var contenders []*Contender
+	for k := range contendersToUpdate {
+		c := contendersToUpdate[k]
+		contenders = append(contenders, &c)
+	}
+
+	// Convert each contender struct ptr to Resource interface
+	var contenderResources []Resource
+	for _, v := range contenders {
+		contenderResources = append(contenderResources, Resource(v))
+	}
+
+	aerr = cc.Update(contenderResources)
+	if aerr != nil {
+		log.Printf("Failed to update contenders: %s\n%s\n", aerr.Msg, aerr.Err)
+		msg := "Something is wrong with our database - we'll be back up soon!"
+		return &ApplicationError{Msg: msg, Code: http.StatusInternalServerError}
+	}
+
+	return nil
+}
 
 // stringOfIntsToSliceOfInts is a helper function that converts a string of ints to a slice of ints.
 //

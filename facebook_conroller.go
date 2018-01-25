@@ -143,9 +143,16 @@ Loop:
 				break Loop
 			}
 
-			p.FbId = facebookPost.Get("id").(string) // a post's id has an _
+			// Convert interface to it's real string value, then the string to an int.
+			id, err := strconv.Atoi(facebookPost.Get("from.id").(string))
+			if err != nil {
+				msg := fmt.Sprintf("Failed to convert fb contenders id to a string: %s", err)
+				return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
+			}
+
+			p.FbId = facebookPost.Get("id").(string) // a post's id has an underscore, 111_222
 			p.FbGroupId = fh.config.FbGroupId
-			p.AuthorFbId = facebookPost.Get("from.id").(int)
+			p.AuthorFbId = id
 			p.PostedDate = t
 
 			// extract fb_ids of contenders who liked post

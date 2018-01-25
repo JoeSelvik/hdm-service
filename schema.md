@@ -2,17 +2,17 @@
 * FbId int                        --> INTEGER
 * FbGroupId int                   --> INTEGER
 * Name string                     --> TEXT
-* TotalPosts []int                --> BLOB, vd
+* Posts []string                  --> BLOB, vd
 * AvgLikesPerPost float64         --> INTEGER, vi
 * TotalLikesReceived int          --> INTEGER, vd
 * TotalLikesGiven int             --> INTEGER, vd
-* PostsUsed []int                 --> BLOB, vd
+* PostsUsed []string              --> BLOB, vd
 * CreatedAt time.Time             --> DATETIME
 * UpdatedAt time.Time             --> DATETIME
 
 
 # Posts
-* FbId int                        --> INTEGER
+* FbId int                        --> TEXT
 * FbGroupId int                   --> INTEGER
 * PostedDate time.Time            --> DATETIME
 * AuthorFbId int                  --> INTEGER

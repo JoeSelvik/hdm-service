@@ -93,7 +93,7 @@ func (pc *PostController) Read(fbId int) (Resource, *ApplicationError) {
 
 // Update writes the db column value for each variable post parameter.
 //
-// Writes TotalPosts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
+// Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
 // todo: test when fb_id does not exist
 func (pc *PostController) Update(m []Resource) *ApplicationError {
 	msg := "No variable data to update on posts"
