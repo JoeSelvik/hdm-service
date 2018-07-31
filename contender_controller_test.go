@@ -100,6 +100,7 @@ func TestMain(m *testing.M) {
 
 // Create, ReadCollection, Update, Read, Destroy, Read contender.
 func TestContenderController_Create(t *testing.T) {
+	// Create a ContenderController with the test db
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
@@ -119,6 +120,7 @@ func TestContenderController_Create(t *testing.T) {
 		contenderResources[i] = Resource(v)
 	}
 
+	// Create the ContenderResources
 	cids, aerr := cc.Create(contenderResources)
 	if aerr != nil {
 		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -174,6 +176,7 @@ func TestContenderController_Create(t *testing.T) {
 
 // TestContenderController_PopulateContendersTable tests that contenders from FB get created in a db.
 func TestContenderController_PopulateContendersTable(t *testing.T) {
+	// Create a ContenderController with the test db and a fake facebook handle
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
@@ -193,6 +196,38 @@ func TestContenderController_PopulateContendersTable(t *testing.T) {
 	}
 }
 
+//func TestContenderController_UpdateContendersVariableDependentData(t *testing.T) {
+//	// Create a ContenderController with the test db and a fake facebook handle
+//	config := NewConfig()
+//	db, err := models.OpenDB(config.DbTestPath)
+//	if err != nil {
+//		t.Fatalf("Could not open test db: %s\n", err)
+//	}
+//	cc := &ContenderController{db: db}
+//
+//	// Create a Contender and Post struct and convert it to a Resource interface
+//	testName := "Matt Anderson"
+//	contenders := []*Contender{
+//		{
+//			Name: testName,
+//			FbId: 666},
+//	}
+//	contenderResources := make([]Resource, len(contenders))
+//	for i, v := range contenders {
+//		contenderResources[i] = Resource(v)
+//	}
+//
+//	// Create the ContenderResources and PostResource
+//	cids, aerr := cc.Create(contenderResources)
+//	if aerr != nil {
+//		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
+//	}
+//	if len(cids) != 1 {
+//		t.Fatal("Should only get back a single id")
+//	}
+//}
+
+// TestContenderController_stringPostsToSlicePostIds tests converting strings into a slice of ints.
 func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
 	var emptySlice []int
 	var tests = []struct {
@@ -219,14 +254,15 @@ func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
 				t.Errorf("Valid '%s' string ids should not generate an error.", tt.inString)
 			}
 			if !reflect.DeepEqual(val, tt.outSlice) {
-				t.Logf("val: %s, type: %s", val, reflect.TypeOf(val))
-				t.Logf("outSlice: %s, type: %s", tt.outSlice, reflect.TypeOf(tt.outSlice))
+				t.Logf("val: %d, type: %s", val, reflect.TypeOf(val))
+				t.Logf("outSlice: %d, type: %s", tt.outSlice, reflect.TypeOf(tt.outSlice))
 				t.Errorf("Valid '%s' did not match slice of ints.", tt.inString)
 			}
 		}
 	}
 }
 
+// TestContenderController_slicePostIdsToStringPosts tests converting a slice of ints into a specific string.
 func TestContenderController_slicePostIdsToStringPosts(t *testing.T) {
 	var tests = []struct {
 		inSlice   []int

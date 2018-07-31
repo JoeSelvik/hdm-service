@@ -121,7 +121,7 @@ func HTTPSendJSON(w http.ResponseWriter, m interface{}, code int) *ApplicationEr
 
 // HTTPError returns an application-formatted JSON error object for when bad things happen.
 func HTTPError(w http.ResponseWriter, r *http.Request, aerr *ApplicationError) {
-	log.Printf("Error: %s\n", aerr.Error)
+	log.Printf("Error: %s\n", aerr.Msg)
 
 	// Marshal the error string to send in our response
 	je, jerr := json.Marshal(aerr)
