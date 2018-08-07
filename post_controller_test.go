@@ -13,19 +13,9 @@ func TestPostController_Create(t *testing.T) {
 		t.Fatal("Could not open test db")
 	}
 	pc := &PostController{db: db}
+	originalPosts, postResources := testPosts()
 
-	// Create a post struct and convert it to a resource interface
-	testAuthorId := 1225
-	posts := []*Post{
-		{
-			AuthorFbId: testAuthorId,
-			FbId:       "666_999"},
-	}
-	postResources := make([]Resource, len(posts))
-	for i, v := range posts {
-		postResources[i] = Resource(v)
-	}
-
+	// Create The PostResource
 	pids, aerr := pc.Create(postResources)
 	if aerr != nil {
 		t.Fatal("Should not error when creating post")
@@ -41,12 +31,12 @@ func TestPostController_Create(t *testing.T) {
 	}
 	var lookup *Post
 	for _, c := range resources {
-		if c.(*Post).AuthorFbId == testAuthorId {
+		if c.(*Post).AuthorFbId == originalPosts[0].AuthorFbId {
 			lookup = c.(*Post)
 			break
 		}
 	}
-	if lookup.AuthorFbId != testAuthorId {
+	if lookup.AuthorFbId != originalPosts[0].AuthorFbId {
 		t.Fatal("Unable to find post in ReadCollection")
 	}
 }

@@ -93,7 +93,6 @@
 
 # START
 * run on entire feed history, deal with when contenders don't exist
-* a UT for UpdateContendersVariableDependentData
 
 # HDM Qs
 * where to get and store a Post's permalink_url?
