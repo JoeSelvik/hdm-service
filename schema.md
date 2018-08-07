@@ -12,11 +12,11 @@
 
 
 # Posts
-* FbId int                        --> TEXT
+* FbId string                     --> TEXT
 * FbGroupId int                   --> INTEGER
 * PostedDate time.Time            --> DATETIME
 * AuthorFbId int                  --> INTEGER
-* Likes int                       --> BLOB
+* Likes []int                     --> BLOB
 * CreatedAt time.Time             --> DATETIME
 * UpdatedAt time.Time             --> DATETIME
 

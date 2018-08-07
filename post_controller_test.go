@@ -26,11 +26,11 @@ func TestPostController_Create(t *testing.T) {
 		postResources[i] = Resource(v)
 	}
 
-	cids, aerr := pc.Create(postResources)
+	pids, aerr := pc.Create(postResources)
 	if aerr != nil {
 		t.Fatal("Should not error when creating post")
 	}
-	if len(cids) != 1 {
+	if len(pids) != 1 {
 		t.Fatal("Should only get back a single id")
 	}
 

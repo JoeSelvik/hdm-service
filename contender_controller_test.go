@@ -13,6 +13,47 @@ import (
 	"testing"
 )
 
+// testContenders returns a slice of Contender pointers and its associated slice of Resource interfaces.
+//
+// Create the struct you'd like to test with, then convert them to Resource interfaces.
+func testContenders() ([]*Contender, []Resource) {
+	contenders := []*Contender{
+		{
+			Name: "Matt Anderson",
+			FbId: 666,
+		},
+		{
+			Name: "George Burrows",
+			FbId: 777,
+		},
+	}
+	contenderResources := make([]Resource, len(contenders))
+	for i, v := range contenders {
+		contenderResources[i] = Resource(v)
+	}
+
+	return contenders, contenderResources
+}
+
+// testPosts returns a slice of Post pointers and its associated slice of Resource interfaces.
+//
+// Create the struct you'd like to test with, then convert them to Resource interfaces.
+func testPosts() ([]*Post, []Resource) {
+	posts := []*Post{
+		{
+			AuthorFbId: 666,
+			FbId:       "666_666",
+			Likes:      []int{777},
+		},
+	}
+	postResources := make([]Resource, len(posts))
+	for i, v := range posts {
+		postResources[i] = Resource(v)
+	}
+
+	return posts, postResources
+}
+
 type fakeFacebookHandle struct{}
 
 func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
@@ -22,7 +63,7 @@ func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *Application
 			FbId: 1234},
 		{
 			Name: "TJ Gordon",
-			FbId: 6666,
+			FbId: 9876,
 		},
 	}
 	return contenders, nil
@@ -108,67 +149,61 @@ func TestContenderController_Create(t *testing.T) {
 	}
 	cc := &ContenderController{db: db}
 
-	// Create a Contender struct and convert it to a Resource interface
-	testName := "Matt Anderson"
-	contenders := []*Contender{
-		{
-			Name: testName,
-			FbId: 666},
-	}
-	contenderResources := make([]Resource, len(contenders))
-	for i, v := range contenders {
-		contenderResources[i] = Resource(v)
-	}
+	originalContenders, contenderResources := testContenders()
 
 	// Create the ContenderResources
 	cids, aerr := cc.Create(contenderResources)
 	if aerr != nil {
-		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
+		t.Fatalf("Should not error when creating updatedContender: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	if len(cids) != 1 {
+	if len(cids) != len(originalContenders) {
 		t.Fatal("Should only get back a single id")
 	}
 
-	// Read all contenders
+	// Read all originalContenders
 	resources, aerr := cc.ReadCollection()
 	if aerr != nil {
-		t.Fatalf("Unable to read collection of contenders: %s\n%s\n", aerr.Msg, aerr.Err)
+		t.Fatalf("Unable to read collection of originalContenders: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	var lookup *Contender
+	var readContender *Contender
 	for _, c := range resources {
-		if c.(*Contender).Name == testName {
-			lookup = c.(*Contender)
+		if c.(*Contender).Name == originalContenders[0].Name {
+			readContender = c.(*Contender)
 			break
 		}
 	}
-	if lookup.Name != testName {
-		t.Fatal("Unable to find contender in ReadCollection")
+	if readContender.Name != originalContenders[0].Name {
+		t.Fatal("Unable to find updatedContender in ReadCollection")
 	}
 
-	// Update contender, convert to slice of Resources
-	lookup.PostsUsed = []string{"111_222", "333_444"}
-	lookupResource := Resource(lookup)
-	aerr = cc.Update([]Resource{lookupResource})
+	// Update readContender, convert to slice of Resources
+	sliceOfPostIds := []string{"111_222", "333_444"}
+	readContender.PostsUsed = sliceOfPostIds
+	readResource := Resource(readContender)
+	aerr = cc.Update([]Resource{readResource})
 	if aerr != nil {
 		t.Fatalf("Error when updating resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 
-	// Read the updated contender
-	resource, aerr := cc.Read(666)
+	// Read the updated updatedContender
+	resource, aerr := cc.Read(originalContenders[0].FbId)
 	if aerr != nil {
 		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	contender := resource.(*Contender)
-	if contender.Name != testName {
-		t.Fatal("Read did not find updated contender")
+	updatedContender := resource.(*Contender)
+	if updatedContender.Name != originalContenders[0].Name {
+		t.Fatal("Read did not find updated updatedContender")
+	}
+	if updatedContender.PostsUsed == nil {
+		t.Fatal("updatedContender did not have any used posts")
 	}
 
-	// Destroy the contender
-	aerr = cc.Destroy([]int{666})
+	// Destroy the originalContender
+	aerr = cc.Destroy([]int{originalContenders[0].FbId})
 	if aerr != nil {
 		t.Fatalf("Error when destroying resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	_, aerr = cc.Read(666)
+	_, aerr = cc.Read(originalContenders[0].FbId)
 	if aerr == nil {
 		t.Fatalf("Should find error when reading non-existent resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
@@ -196,36 +231,55 @@ func TestContenderController_PopulateContendersTable(t *testing.T) {
 	}
 }
 
-//func TestContenderController_UpdateContendersVariableDependentData(t *testing.T) {
-//	// Create a ContenderController with the test db and a fake facebook handle
-//	config := NewConfig()
-//	db, err := models.OpenDB(config.DbTestPath)
-//	if err != nil {
-//		t.Fatalf("Could not open test db: %s\n", err)
-//	}
-//	cc := &ContenderController{db: db}
-//
-//	// Create a Contender and Post struct and convert it to a Resource interface
-//	testName := "Matt Anderson"
-//	contenders := []*Contender{
-//		{
-//			Name: testName,
-//			FbId: 666},
-//	}
-//	contenderResources := make([]Resource, len(contenders))
-//	for i, v := range contenders {
-//		contenderResources[i] = Resource(v)
-//	}
-//
-//	// Create the ContenderResources and PostResource
-//	cids, aerr := cc.Create(contenderResources)
-//	if aerr != nil {
-//		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
-//	}
-//	if len(cids) != 1 {
-//		t.Fatal("Should only get back a single id")
-//	}
-//}
+func TestContenderController_UpdateContendersVariableDependentData(t *testing.T) {
+	// Create a ContenderController with the test db and a fake facebook handle
+	config := NewConfig()
+	db, err := models.OpenDB(config.DbTestPath)
+	if err != nil {
+		t.Fatalf("Could not open test db: %s\n", err)
+	}
+	cc := &ContenderController{db: db}
+	pc := &PostController{db: db}
+
+	originalContenders, contenderResources := testContenders()
+	originalPosts, postResources := testPosts()
+
+	// Create the ContenderResource and PostResource
+	cids, aerr := cc.Create(contenderResources)
+	if aerr != nil {
+		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
+	}
+	if len(cids) != len(originalContenders) {
+		t.Fatal("Should only get back a single id")
+	}
+
+	pids, aerr := pc.Create(postResources)
+	if aerr != nil {
+		t.Fatal("Should not error when creating post")
+	}
+	if len(pids) != 1 {
+		t.Fatal("Should only get back a single id")
+	}
+
+	// Update the Contender's variable dependent data
+	aerr = cc.UpdateContendersVariableDependentData(pc)
+	if aerr != nil {
+		t.Fatalf("Should not error when calling UpdateContendersVariableDependentData: %s\n%s\n", aerr.Msg, aerr.Err)
+	}
+
+	// Read the updated updatedContender
+	resource, aerr := cc.Read(originalContenders[0].FbId)
+	if aerr != nil {
+		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
+	}
+	updatedContender := resource.(*Contender)
+	if updatedContender.Name != originalContenders[0].Name {
+		t.Fatal("Read did not find updated updatedContender")
+	}
+	if len(updatedContender.Posts) == len(originalPosts) {
+		t.Fatal("updatedContender did not have any posts")
+	}
+}
 
 // TestContenderController_stringPostsToSlicePostIds tests converting strings into a slice of ints.
 func TestContenderController_stringPostsToSlicePostIds(t *testing.T) {
