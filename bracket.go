@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"net/http"
 	"sort"
@@ -171,10 +172,10 @@ func CreateInitialTeams() (*[]TeamPair, error) {
 	log.Println("Creating initial teams")
 
 	//contenders, _ := GetHDMContenders(db)
-	var contenders map[int]*Contender
+	var contenders map[int]*models.Contender
 
 	// seedContenders
-	sortedContenders := make(contenderSlice, 0, len(contenders))
+	sortedContenders := make(models.ContenderSlice, 0, len(contenders))
 	for _, c := range contenders {
 		sortedContenders = append(sortedContenders, c)
 	}

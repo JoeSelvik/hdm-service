@@ -17,7 +17,7 @@ type PostController struct {
 
 // ServeHTTP routes incoming requests to the right service.
 func (pc *PostController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := new(Contender)
+	c := new(models.Contender)
 	ServeResource(w, r, pc, c)
 }
 
@@ -34,9 +34,9 @@ func (pc *PostController) DBTableName() string {
 // Create writes a new post to the db for each given Resource.
 func (pc *PostController) Create(m []models.Resource) ([]int, *ApplicationError) {
 	// create a slice of contender pointers by asserting on a slice of Resources interfaces
-	var posts []*Post
+	var posts []*models.Post
 	for _, p := range m {
-		posts = append(posts, p.(*Post))
+		posts = append(posts, p.(*models.Post))
 	}
 
 	// create the SQL query
@@ -142,7 +142,7 @@ func (pc *PostController) ReadCollection() ([]models.Resource, *ApplicationError
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		c := Post{
+		p := models.Post{
 			FbId:       fbId,
 			FbGroupId:  fbGroupId,
 			PostedDate: postedDate,
@@ -152,7 +152,7 @@ func (pc *PostController) ReadCollection() ([]models.Resource, *ApplicationError
 			UpdatedAt:  updatedAt,
 		}
 
-		posts = append(posts, &c)
+		posts = append(posts, &p)
 	}
 	return posts, nil
 }

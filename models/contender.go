@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"time"
@@ -32,19 +32,19 @@ func (c *Contender) SetUpdatedAt(t time.Time) {
 // /////////////////
 
 // Sort interface, http://stackoverflow.com/questions/19946992/sorting-a-map-of-structs-golang
-type contenderSlice []*Contender
+type ContenderSlice []*Contender
 
 // Len is part of sort.Interface.
-func (c contenderSlice) Len() int {
+func (c ContenderSlice) Len() int {
 	return len(c)
 }
 
 // Swap is part of sort.Interface.
-func (c contenderSlice) Swap(i, j int) {
+func (c ContenderSlice) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
 
 // Less is part of sort.Interface. Use AvgLikesPerPost as the value to sort by
-func (c contenderSlice) Less(i, j int) bool {
+func (c ContenderSlice) Less(i, j int) bool {
 	return c[i].AvgLikesPerPost > c[j].AvgLikesPerPost
 }

@@ -14,8 +14,8 @@ import (
 // testContenders returns a slice of contender pointers and their associated slice of resource interfaces.
 //
 // Create the struct to test with, then convert to resource interfaces.
-func testContenders() ([]*Contender, []models.Resource) {
-	contenders := []*Contender{
+func testContenders() ([]*models.Contender, []models.Resource) {
+	contenders := []*models.Contender{
 		{
 			Name: "Matt Anderson",
 			FbId: 666,
@@ -36,8 +36,8 @@ func testContenders() ([]*Contender, []models.Resource) {
 // testPosts returns a slice of post pointers and its associated slice of resource interfaces.
 //
 // Create the struct to test with, then convert to resource interfaces.
-func testPosts() ([]*Post, []models.Resource) {
-	posts := []*Post{
+func testPosts() ([]*models.Post, []models.Resource) {
+	posts := []*models.Post{
 		{
 			AuthorFbId: 666,
 			FbId:       "666_666",
@@ -55,8 +55,8 @@ func testPosts() ([]*Post, []models.Resource) {
 type fakeFacebookHandle struct{}
 
 // PullContendersFromFb is a mock function on the test fakeFacebookHandle interface.
-func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
-	contenders := []*Contender{
+func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*models.Contender, *ApplicationError) {
+	contenders := []*models.Contender{
 		{
 			Name: "Joe Selvik",
 			FbId: 1234},
@@ -69,8 +69,8 @@ func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *Application
 }
 
 // PullPostsFromFb is a mock function on the test fakeFacebookHandle interface.
-func (fh *fakeFacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
-	posts := []*Post{
+func (fh *fakeFacebookHandle) PullPostsFromFb() ([]*models.Post, *ApplicationError) {
+	posts := []*models.Post{
 		{
 			FbId: "111_222",
 		},
@@ -166,10 +166,10 @@ func TestContenderController_Create(t *testing.T) {
 	if aerr != nil {
 		t.Fatalf("Unable to read collection of originalContenders: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	var readContender *Contender
+	var readContender *models.Contender
 	for _, c := range resources {
-		if c.(*Contender).Name == originalContenders[0].Name {
-			readContender = c.(*Contender)
+		if c.(*models.Contender).Name == originalContenders[0].Name {
+			readContender = c.(*models.Contender)
 			break
 		}
 	}
@@ -191,7 +191,7 @@ func TestContenderController_Create(t *testing.T) {
 	if aerr != nil {
 		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	updatedContender := resource.(*Contender)
+	updatedContender := resource.(*models.Contender)
 	if updatedContender.Name != originalContenders[0].Name {
 		t.Fatal("Read did not find updated updatedContender")
 	}
@@ -276,7 +276,7 @@ func TestContenderController_UpdateContendersVariableDependentData(t *testing.T)
 	if aerr != nil {
 		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
-	updatedContender := resource.(*Contender)
+	updatedContender := resource.(*models.Contender)
 	if updatedContender.Name != originalContenders[0].Name {
 		t.Fatal("Read did not find updated updatedContender")
 	}

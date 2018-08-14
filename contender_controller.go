@@ -19,7 +19,7 @@ type ContenderController struct {
 
 // ServeHTTP routes incoming requests to the right service.
 func (cc *ContenderController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := new(Contender)
+	c := new(models.Contender)
 	ServeResource(w, r, cc, c)
 }
 
@@ -36,10 +36,10 @@ func (cc *ContenderController) DBTableName() string {
 // Create writes a new contender to the db for each given Resource.
 func (cc *ContenderController) Create(m []models.Resource) ([]int, *ApplicationError) {
 	// create a slice of Contender pointers by asserting on a slice of Resources interfaces
-	var contenders []*Contender
+	var contenders []*models.Contender
 	for i := 0; i < len(m); i++ {
 		c := m[i]
-		contenders = append(contenders, c.(*Contender))
+		contenders = append(contenders, c.(*models.Contender))
 	}
 
 	// Create the SQL query
@@ -123,7 +123,7 @@ func (cc *ContenderController) Read(fbId int) (models.Resource, *ApplicationErro
 	postsUsed := strings.Split(postsUsedString, ", ")
 
 	// create contender
-	c := Contender{
+	c := models.Contender{
 		FbId:               fbId,
 		FbGroupId:          fbGroupId,
 		Name:               name,
@@ -144,10 +144,10 @@ func (cc *ContenderController) Read(fbId int) (models.Resource, *ApplicationErro
 // Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
 func (cc *ContenderController) Update(m []models.Resource) *ApplicationError {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
-	var contenders []*Contender
+	var contenders []*models.Contender
 	for i := 0; i < len(m); i++ {
 		c := m[i]
-		contenders = append(contenders, c.(*Contender))
+		contenders = append(contenders, c.(*models.Contender))
 	}
 
 	// begin sql transaction
@@ -294,7 +294,7 @@ func (cc *ContenderController) ReadCollection() ([]models.Resource, *Application
 		totalPosts := strings.Split(totalPostsString, ", ")
 		postsUsed := strings.Split(postsUsedString, ", ")
 
-		c := Contender{
+		c := models.Contender{
 			FbId:               fbId,
 			FbGroupId:          fbGroupId,
 			Name:               name,
@@ -347,16 +347,16 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 		log.Printf("Failed pc.ReadCollection: %s\n", aerr.Msg)
 		return aerr
 	}
-	var posts []*Post
+	var posts []*models.Post
 	for _, p := range postResources {
-		posts = append(posts, p.(*Post))
+		posts = append(posts, p.(*models.Post))
 	}
 
 	// create a map of contenders to update for each post
-	contendersToUpdate := make(map[int]Contender)
+	contendersToUpdate := make(map[int]models.Contender)
 	for _, p := range posts {
 		// get contender who authored post
-		var author *Contender
+		var author *models.Contender
 		if val, okay := contendersToUpdate[p.AuthorFbId]; okay {
 			author = &val
 		} else {
@@ -366,7 +366,7 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 				msg := "Something is wrong with our database - we'll be back up soon!"
 				return &ApplicationError{Msg: msg, Code: http.StatusInternalServerError}
 			}
-			author = authorResource.(*Contender)
+			author = authorResource.(*models.Contender)
 		}
 
 		// update author's vd
@@ -376,7 +376,7 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 
 		// for each like, update contender's likes given
 		for _, l := range p.Likes {
-			var liker *Contender
+			var liker *models.Contender
 			if val, okay := contendersToUpdate[l]; okay {
 				liker = &val
 			} else {
@@ -386,7 +386,7 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 					msg := "Something is wrong with our database - we'll be back up soon!"
 					return &ApplicationError{Msg: msg, Code: http.StatusInternalServerError}
 				}
-				liker = likerResource.(*Contender)
+				liker = likerResource.(*models.Contender)
 			}
 			liker.TotalLikesGiven = liker.TotalLikesGiven + 1
 			contendersToUpdate[liker.FbId] = *liker
@@ -394,7 +394,7 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 	}
 
 	// grab each contender from the map of to be updated, convert to ptr
-	var contenders []*Contender
+	var contenders []*models.Contender
 	for k := range contendersToUpdate {
 		c := contendersToUpdate[k]
 		contenders = append(contenders, &c)

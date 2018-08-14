@@ -5,6 +5,7 @@ import (
 	// "encoding/json"
 	"database/sql"
 	"fmt"
+	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"time"
 )
@@ -12,10 +13,10 @@ import (
 type Matchup struct {
 	Id         int
 	Name       string // ie: firstRound_g0
-	ContenderA *Contender
+	ContenderA *models.Contender
 	APosts     []string // slice of perm_urls
 	AVotes     int
-	ContenderB *Contender
+	ContenderB *models.Contender
 	BPosts     []string // slice of perm_urls
 	BVotes     int
 	InProgress bool

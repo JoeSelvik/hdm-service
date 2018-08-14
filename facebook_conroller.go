@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/JoeSelvik/hdm-service/models"
 	fb "github.com/huandu/facebook"
 	"log"
 	"net/http"
@@ -14,8 +15,8 @@ import (
 )
 
 type Facebooker interface {
-	PullContendersFromFb() ([]*Contender, *ApplicationError)
-	PullPostsFromFb() ([]*Post, *ApplicationError)
+	PullContendersFromFb() ([]*models.Contender, *ApplicationError)
+	PullPostsFromFb() ([]*models.Post, *ApplicationError)
 }
 
 type FacebookHandle struct {
@@ -38,7 +39,7 @@ func (fh FacebookHandle) getFbSession() *fb.Session {
 }
 
 // PullContendersFromFb returns a slice of pointers to Contenders from a FB group set in the configuration.
-func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
+func (fh FacebookHandle) PullContendersFromFb() ([]*models.Contender, *ApplicationError) {
 	// request members via fb graph api, response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/members", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
@@ -58,13 +59,13 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 	}
 
 	// create each Contender from the facebook response
-	var contenders []*Contender
+	var contenders []*models.Contender
 	for {
 		results := paging.Data()
 
 		// ie - map[administrator:false name:Jack White id:6666666666666666]
 		for i := 0; i < len(results); i++ {
-			var c Contender
+			var c models.Contender
 			facebookContender := fb.Result(results[i]) // cast the var
 
 			// convert interface to its real string value, then the string to an int.
@@ -94,7 +95,7 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 }
 
 // PullPostsFromFb returns a slice of Post pointers from the configured group feed up to a given date.
-func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
+func (fh FacebookHandle) PullPostsFromFb() ([]*models.Post, *ApplicationError) {
 	// request group feed, response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
@@ -114,7 +115,7 @@ func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
 	}
 
 	// create each Post from the facebook response
-	var posts []*Post
+	var posts []*models.Post
 
 	// loop until a fb post's created_time is older than config.StartTime
 	// todo: clean up messy code
@@ -124,7 +125,7 @@ Loop:
 
 		// 25 posts per page, load data into a Post struct
 		for i := 0; i < len(results); i++ {
-			var p Post
+			var p models.Post
 			facebookPost := fb.Result(results[i]) // cast the var
 
 			// parse post's created_time

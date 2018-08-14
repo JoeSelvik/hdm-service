@@ -31,10 +31,10 @@ func TestPostController_Create(t *testing.T) {
 	if aerr != nil {
 		t.Fatal("Unable to read collection of posts")
 	}
-	var lookup *Post
+	var lookup *models.Post
 	for _, c := range resources {
-		if c.(*Post).AuthorFbId == originalPosts[0].AuthorFbId {
-			lookup = c.(*Post)
+		if c.(*models.Post).AuthorFbId == originalPosts[0].AuthorFbId {
+			lookup = c.(*models.Post)
 			break
 		}
 	}
