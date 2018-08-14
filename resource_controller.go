@@ -6,7 +6,7 @@ type ResourceController interface {
 
 	Create(m []Resource) ([]int, *ApplicationError)
 	Read(id int) (Resource, *ApplicationError)
-	Update(m []Resource) *ApplicationError // todo: return anything?
-	Destroy(ids []int) *ApplicationError   // todo: or destroy collection?
+	Update(m []Resource) *ApplicationError
+	Destroy(ids []int) *ApplicationError // todo: add DestroyCollection()?
 	ReadCollection() ([]Resource, *ApplicationError)
 }

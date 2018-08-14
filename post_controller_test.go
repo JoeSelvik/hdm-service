@@ -5,7 +5,9 @@ import (
 	"testing"
 )
 
-// Create, ReadCollection, Update, Read, Destroy, Read contender.
+// TestPostController_Create tests Create and Read for posts.
+//
+// todo: expand once all of the post functions are implemented
 func TestPostController_Create(t *testing.T) {
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
@@ -15,7 +17,7 @@ func TestPostController_Create(t *testing.T) {
 	pc := &PostController{db: db}
 	originalPosts, postResources := testPosts()
 
-	// Create The PostResource
+	// create the post resource
 	pids, aerr := pc.Create(postResources)
 	if aerr != nil {
 		t.Fatal("Should not error when creating post")
@@ -24,7 +26,7 @@ func TestPostController_Create(t *testing.T) {
 		t.Fatal("Should only get back a single id")
 	}
 
-	// Read all posts
+	// read all posts
 	resources, aerr := pc.ReadCollection()
 	if aerr != nil {
 		t.Fatal("Unable to read collection of posts")

@@ -35,7 +35,7 @@ func (cc *ContenderController) DBTableName() string {
 
 // Create writes a new contender to the db for each given Resource.
 func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
-	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
+	// create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
 	for i := 0; i < len(m); i++ {
 		c := m[i]
@@ -51,7 +51,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	) values (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`, cc.DBTableName())
 
-	// Begin sql transaction
+	// begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
@@ -59,7 +59,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 	}
 	defer tx.Rollback()
 
-	// Insert each Contender into contenders table
+	// insert each Contender into contenders table
 	var contenderIds []int
 	for _, c := range contenders {
 		posts := strings.Join(c.Posts[:], ", ")
@@ -73,7 +73,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Save each Id to return
+		// save each Id to return
 		id, err := result.LastInsertId()
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
@@ -82,7 +82,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 		contenderIds = append(contenderIds, int(id))
 	}
 
-	// Commit sql transaction
+	// commit sql transaction
 	if err = tx.Commit(); err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -93,7 +93,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 
 // Read returns the contender in the db for a given FbId.
 func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
-	// todo: better way to shorten line of code and reuse in ReadCollection?
+	// todo: find better way to shorten lines of code and reuse in ReadCollection
 	var fbGroupId int
 	var name string
 	var totalPostsString string
@@ -104,7 +104,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 	var createdAt time.Time
 	var updatedAt time.Time
 
-	// Grab contender entry from table
+	// grab contender entry from table
 	q := fmt.Sprintf("SELECT * FROM %s WHERE fb_id=%d", cc.DBTableName(), fbId)
 	err := cc.db.QueryRow(q).Scan(&fbId, &fbGroupId, &name, &totalPostsString, &avgLikesPerPost, &totalLikesReceived,
 		&totalLikesGiven, &postsUsedString, &createdAt, &updatedAt) // todo: okay to unscan into fbId arg?
@@ -117,12 +117,12 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
-	// todo: better way to abstract unloading strings of ints and creating individual contender (and ReadCollection)?
-	// Split comma separated strings to slices of ints
+	// todo: find better way to abstract unloading strings of ints and creating individual contender and ReadCollection
+	// split comma separated strings to slices of ints
 	totalPosts := strings.Split(totalPostsString, ", ")
 	postsUsed := strings.Split(postsUsedString, ", ")
 
-	// Create Contender
+	// create contender
 	c := Contender{
 		FbId:               fbId,
 		FbGroupId:          fbGroupId,
@@ -142,7 +142,6 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 // Update writes the db column value for each variable Contender parameter.
 //
 // Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
-// todo: test when fb_id does not exist
 func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
@@ -151,7 +150,7 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 		contenders = append(contenders, c.(*Contender))
 	}
 
-	// Begin sql transaction
+	// begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
@@ -159,7 +158,7 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 	}
 	defer tx.Rollback()
 
-	// Create the SQL query
+	// create the SQL query
 	q := fmt.Sprintf(`
 	UPDATE %s SET
 		posts=?, avg_likes_per_post=?, total_likes_received=?, total_likes_given=?, posts_used=?,
@@ -167,7 +166,7 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 		WHERE fb_id=?
 	`, cc.DBTableName())
 
-	// Iterate through each contender and update it in the db
+	// iterate through each contender and update it in the db
 	for _, c := range contenders {
 		posts := strings.Join(c.Posts[:], ", ")
 		postsUsed := strings.Join(c.PostsUsed[:], ", ")
@@ -178,26 +177,26 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Not really sure what this can error on
+		// Note - not really sure what this can error on
 		numrows, err := res.RowsAffected()
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// If more or less than one row is affected then we have a problem
+		// if more or less than one row is affected then we have a problem
 		switch {
 		case numrows == 0:
 			msg := fmt.Sprintf("Couldn't find any resource to update with id: %d", c.FbId)
 			return &ApplicationError{Msg: msg, Code: http.StatusNotFound}
 		case numrows != 1:
-			// This is really bad, should never see. May be an SQL injection attempt.
+			// this is really bad, should never see. May be an SQL injection attempt.
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 	}
 
-	// Commit sql transaction
+	// commit sql transaction
 	if err = tx.Commit(); err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -208,7 +207,7 @@ func (cc *ContenderController) Update(m []Resource) *ApplicationError {
 
 // Destroy deletes any given Id from the db.
 func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
-	// Begin sql transaction
+	// begin sql transaction
 	tx, err := cc.db.Begin()
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
@@ -216,10 +215,10 @@ func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 	}
 	defer tx.Rollback()
 
-	// Create the SQL query
+	// breate the SQL query
 	q := fmt.Sprintf("DELETE FROM %s WHERE fb_id = $1;", cc.DBTableName())
 
-	// Iterate through each contender and update it in the db
+	// iterate through each contender and update it in the db
 	for _, v := range ids {
 		// todo: a lot of repeated code from update's error handling
 		res, err := tx.Exec(q, v)
@@ -228,26 +227,26 @@ func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Not really sure what this can error on
+		// not really sure what this can error on
 		numrows, err := res.RowsAffected()
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// If more or less than one row is affected then we have a problem
+		// if more or less than one row is affected then we have a problem
 		switch {
 		case numrows == 0:
 			msg := fmt.Sprintf("Couldn't find any resource to destroy with id: %d", v)
 			return &ApplicationError{Msg: msg, Code: http.StatusNotFound}
 		case numrows != 1:
-			// This is really bad, should never see. May be an SQL injection attempt.
+			// this is really bad, should never see. May be an SQL injection attempt.
 			msg := "Something is wrong with our database - we'll be back up soon!"
 			return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 	}
 
-	// Commit sql transaction
+	// commit sql transaction
 	if err = tx.Commit(); err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -258,7 +257,7 @@ func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 
 // ReadCollection returns all Contenders in the db.
 func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) {
-	// Grab rows from table
+	// grab rows from table
 	rows, err := cc.db.Query(fmt.Sprintf("SELECT * FROM %s", cc.DBTableName()))
 	switch {
 	case err == sql.ErrNoRows:
@@ -270,8 +269,8 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 	}
 	defer rows.Close()
 
-	// Create a Contender from each row
-	contenders := make([]Resource, 0) // Container for the Resources we're about to return
+	// create a contender from each row
+	contenders := make([]Resource, 0)
 	for rows.Next() {
 		var fbId int
 		var fbGroupId int
@@ -291,7 +290,7 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Split comma separated strings to slices of ints
+		// split comma separated strings to slices of ints
 		totalPosts := strings.Split(totalPostsString, ", ")
 		postsUsed := strings.Split(postsUsedString, ", ")
 
@@ -313,28 +312,23 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 	return contenders, nil
 }
 
-// /////
-// Non API methods and helper functions
-// todo: does this section belong?
-// /////
-
-// PopulateContendersTable pulls contenders via the FB api and enters them into the contender table.
+// PopulateContendersTable pulls contenders via the facebook api and enters them into the contender table.
 func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	log.Println("Pulling contenders from facebook and creating in db")
 
-	// Get slice of contender struct pointers from fb
+	// get slice of contender struct pointers from fb
 	contenders, aerr := cc.fh.PullContendersFromFb()
 	if aerr != nil {
 		return aerr
 	}
 
-	// Convert each contender struct ptr to Resource interface
+	// convert each contender struct ptr to Resource interface
 	contenderResources := make([]Resource, len(contenders))
 	for i, v := range contenders {
 		contenderResources[i] = Resource(v)
 	}
 
-	// Populate Contenders table
+	// populate Contenders table
 	_, aerr = cc.Create(contenderResources)
 	if aerr != nil {
 		return aerr
@@ -343,10 +337,11 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	return nil
 }
 
+// UpdateContendersVariableDependentData updates all the contender fields that depend on post data.
 func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostController) *ApplicationError {
 	log.Println("Updating contender VDD in db")
 
-	// Get a slice of Posts
+	// get a slice of posts
 	postResources, aerr := pc.ReadCollection()
 	if aerr != nil {
 		log.Printf("Failed pc.ReadCollection: %s\n", aerr.Msg)
@@ -357,10 +352,10 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 		posts = append(posts, p.(*Post))
 	}
 
-	// Create a map of contenders to update for each post
+	// create a map of contenders to update for each post
 	contendersToUpdate := make(map[int]Contender)
 	for _, p := range posts {
-		// Get Contender who authored post
+		// get contender who authored post
 		var author *Contender
 		if val, okay := contendersToUpdate[p.AuthorFbId]; okay {
 			author = &val
@@ -374,12 +369,12 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 			author = authorResource.(*Contender)
 		}
 
-		// Update author's vd
+		// update author's vd
 		author.Posts = append(author.Posts, p.FbId)
 		author.TotalLikesReceived = author.TotalLikesReceived + len(p.Likes)
 		contendersToUpdate[author.FbId] = *author
 
-		// For each like, update contender's likes given
+		// for each like, update contender's likes given
 		for _, l := range p.Likes {
 			var liker *Contender
 			if val, okay := contendersToUpdate[l]; okay {
@@ -398,14 +393,14 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 		}
 	}
 
-	// Grab each contender from the map of to be updated, convert to ptr
+	// grab each contender from the map of to be updated, convert to ptr
 	var contenders []*Contender
 	for k := range contendersToUpdate {
 		c := contendersToUpdate[k]
 		contenders = append(contenders, &c)
 	}
 
-	// Convert each contender struct ptr to Resource interface
+	// convert each contender struct ptr to Resource interface
 	var contenderResources []Resource
 	for _, v := range contenders {
 		contenderResources = append(contenderResources, Resource(v))
@@ -423,6 +418,7 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 
 // stringOfIntsToSliceOfInts is a helper function that converts a string of ints to a slice of ints.
 //
+// todo: probably a better way to do this...
 // "1, 2, 3" to []int{1, 2, 3}
 // "1,2,3" will throw an error
 // returns []int{} if given string is ""
@@ -445,8 +441,8 @@ func stringOfIntsToSliceOfInts(s string) ([]int, error) {
 
 // sliceOfIntsToString is a helper function that converts a slice of post ids to a string of ids.
 //
-// todo: recover() from panic()? is this possible?
 // todo: probably a better way to do this...
+// todo: recover() from panic()? is this possible?
 // https://stackoverflow.com/questions/25025467/catching-panics-in-golang
 func sliceOfIntsToString(slicePostIds []int) string {
 	stringPosts := fmt.Sprint(slicePostIds)                     // [1 2 3] to "[1 2 3]"

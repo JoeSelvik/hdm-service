@@ -15,10 +15,9 @@ func main() {
 	log.Println("Welcome to the HerpDerp Madness service")
 	log.Println()
 
-	// Parse the config, define global Config variable.
+	// Parse the config
 	config := NewConfig()
 
-	// Print the config
 	log.Printf("Facebook Access Token:\t%s\n", config.FbAccessToken)
 	log.Printf("Facebook Group Id:\t%d\n", config.FbGroupId)
 	log.Printf("Database:\t%s\n", config.DbPath)
@@ -29,24 +28,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// todo: defer db.close()?
+	defer db.Close()
 
 	// Create the fb handle
 	fh := FacebookHandle{config: config}
 
-	//// Pull fb contenders
-	//contenders, aerr := PullContendersFromFb()
-	//if aerr != nil {
-	//	panic("Couldn't get Facebook contenders")
-	//}
-	//log.Println("found contenders:", len(contenders))
-
-	//// Pull fb posts
-	//posts, aerr := fh.PullPostsFromFb()
-	//if aerr != nil {
-	//	panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
-	//}
-	//log.Println("found posts:", len(posts))
+	// todo: add cli option to display these instead of running service
+	//fetchContendersFromFb(&fh)
+	//fetchPostsFromFb(&fh)
 
 	// Register http handlers
 	cc := &ContenderController{config: config, db: db, fh: &fh}
@@ -55,19 +44,22 @@ func main() {
 	pc := &PostController{config: config, db: db, fh: &fh}
 	http.Handle(pc.Path(), pc)
 
-	//// Create Contenders
+	// Note - On 4/4/18 Facebook removed many of the api endpoints used.
+	//        Commented out until an alternative solution is implemented
+
+	// Create Contenders
 	//aerr := cc.PopulateContendersTable()
 	//if aerr != nil {
-	//	panic(fmt.Sprintf("Could not populate contenders: %s\n%s", aerr, aerr.Err))
+	//	panic(fmt.Sprintf("Could not populate contenders: %s\n%s", aerr, aerr))
 	//}
-	//
-	//// Create Posts
+
+	// Create Posts
 	//aerr = pc.PopulatePostsTable()
 	//if aerr != nil {
 	//	panic(fmt.Sprintf("Could not populate posts: %s\n%s", aerr, aerr.Err))
 	//}
-	//
-	//// Update contender's VDD
+
+	// Update contender's VDD
 	//aerr = cc.UpdateContendersVariableDependentData(pc)
 	//if aerr != nil {
 	//	panic(fmt.Sprintf("Could not update contender's VDD: %s\n%s", aerr, aerr.Err))
@@ -108,4 +100,26 @@ func loadDogSounds() []string {
 	}
 
 	return dogSounds
+}
+
+// fetchContendersFromFb is a convenience function to display Contenders fetched from facebook.
+//
+// Note - On 4/4/18 Facebook removed many of the api endpoints needed. This no longer works.
+func fetchContendersFromFb(fh *FacebookHandle) {
+	contenders, aerr := fh.PullContendersFromFb()
+	if aerr != nil {
+		panic(fmt.Sprintf("Couldn't get Facebook contenders: %s", aerr.Msg))
+	}
+	log.Printf("Found %d contenders\n", len(contenders))
+}
+
+// fetchPostsFromFb is a convenience function to display Posts fetched from facebook.
+//
+// Note - On 4/4/18 Facebook removed many of the api endpoints needed. This no longer works.
+func fetchPostsFromFb(fh *FacebookHandle) {
+	posts, aerr := fh.PullPostsFromFb()
+	if aerr != nil {
+		panic(fmt.Sprintf("Couldn't get Facebook posts: %s\n%s\n", aerr.Msg, aerr.Err))
+	}
+	log.Printf("Found %d posts\n", len(posts))
 }

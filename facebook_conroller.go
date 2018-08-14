@@ -1,5 +1,5 @@
-// Not unit tested because there are only two calls to the fb SDK library and all this
-// code is parsing logic around the custom types that are returned from the dependency. Would
+// Not unit tested because there are only two calls to the fb SDK library. The code is primarily
+// parsing logic around the custom types that are returned from the dependency. Would
 // have to implement fake interfaces for any functionality called on fb; paging and result.
 
 package main
@@ -18,15 +18,13 @@ type Facebooker interface {
 	PullPostsFromFb() ([]*Post, *ApplicationError)
 }
 
-// todo: only load with FB config options?
 type FacebookHandle struct {
 	config *Configuration
 }
 
-// GetFbSession returns the pointer to a fb Session object.
+// getFbSession returns the pointer to a fb Session object.
 //
-// Panics if interacting with FB does not work.
-// todo: learn how this works
+// Panics if interacting with FB fails.
 func (fh FacebookHandle) getFbSession() *fb.Session {
 	// "your-app-id", "your-app-secret", from 'development' app I made
 	var globalApp = fb.New("756979584457445", "023c1d8f5e901c2111d7d136f5165b2a")
@@ -39,10 +37,9 @@ func (fh FacebookHandle) getFbSession() *fb.Session {
 	return session
 }
 
-// PullContendersFromFb returns a slice of pointers to Contenders for a given *Session from a FB group
+// PullContendersFromFb returns a slice of pointers to Contenders from a FB group set in the configuration.
 func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
-	// Request members via fb graph api
-	// response is a map[string]interface{} fb.Result
+	// request members via fb graph api, response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/members", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
 		"fields":       []string{"name", "id"},
@@ -52,7 +49,7 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
-	// Get the member's paging object
+	// get the member's paging object
 	session := fh.getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
@@ -60,16 +57,17 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
+	// create each Contender from the facebook response
 	var contenders []*Contender
 	for {
 		results := paging.Data()
 
-		// map[administrator:false name:Jacob Glowacki id:1822807864675176]
+		// ie - map[administrator:false name:Jack White id:6666666666666666]
 		for i := 0; i < len(results); i++ {
 			var c Contender
 			facebookContender := fb.Result(results[i]) // cast the var
 
-			// Convert interface to it's real string value, then the string to an int.
+			// convert interface to its real string value, then the string to an int.
 			id, err := strconv.Atoi(facebookContender.Get("id").(string))
 			if err != nil {
 				msg := "Failed to convert fb contenders id to a string"
@@ -95,9 +93,9 @@ func (fh FacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError
 	return contenders, nil
 }
 
-// PullPostsFromFb returns a slice of Posts from the Group feed up to a given date.
+// PullPostsFromFb returns a slice of Post pointers from the configured group feed up to a given date.
 func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
-	// Get the group feed
+	// request group feed, response is a map[string]interface{} fb.Result
 	response, err := fb.Get(fmt.Sprintf("/%d/feed", fh.config.FbGroupId), fb.Params{
 		"access_token": fh.config.FbAccessToken,
 		"fields":       []string{"from", "created_time", "likes"},
@@ -107,7 +105,7 @@ func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
-	// Get the feed's paging object
+	// get the feed's paging object
 	session := fh.getFbSession()
 	paging, err := response.Paging(session)
 	if err != nil {
@@ -115,9 +113,11 @@ func (fh FacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 	}
 
+	// create each Post from the facebook response
 	var posts []*Post
 
 	// loop until a fb post's created_time is older than config.StartTime
+	// todo: clean up messy code
 Loop:
 	for {
 		results := paging.Data()
@@ -127,7 +127,7 @@ Loop:
 			var p Post
 			facebookPost := fb.Result(results[i]) // cast the var
 
-			// Parse post's created_time
+			// parse post's created_time
 			t, err := time.Parse(GoTimeLayout, facebookPost.Get("created_time").(string))
 			if err != nil {
 				msg := "Failed to parse a fb post's postedDate"
@@ -143,7 +143,7 @@ Loop:
 				break Loop
 			}
 
-			// Convert interface to it's real string value, then the string to an int.
+			// convert interface to it's real string value, then the string to an int.
 			id, err := strconv.Atoi(facebookPost.Get("from.id").(string))
 			if err != nil {
 				msg := fmt.Sprintf("Failed to convert fb contenders id to a string: %s", err)

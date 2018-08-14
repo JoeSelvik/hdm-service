@@ -33,13 +33,13 @@ func (pc *PostController) DBTableName() string {
 
 // Create writes a new post to the db for each given Resource.
 func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
-	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
+	// create a slice of contender pointers by asserting on a slice of Resources interfaces
 	var posts []*Post
 	for _, p := range m {
 		posts = append(posts, p.(*Post))
 	}
 
-	// Create the SQL query
+	// create the SQL query
 	q := fmt.Sprintf(`
 	INSERT INTO %s (
 		fb_id, fb_group_id,
@@ -48,7 +48,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 	) values (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	`, pc.DBTableName())
 
-	// Begin sql transaction
+	// begin sql transaction
 	tx, err := pc.db.Begin()
 	if err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
@@ -68,7 +68,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Save each id to return
+		// save each id to return
 		id, err := result.LastInsertId()
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
@@ -77,7 +77,7 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 		postIds = append(postIds, int(id))
 	}
 
-	// Commit sql transaction
+	// commit sql transaction
 	if err = tx.Commit(); err != nil {
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -94,7 +94,6 @@ func (pc *PostController) Read(fbId int) (Resource, *ApplicationError) {
 // Update writes the db column value for each variable post parameter.
 //
 // Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
-// todo: test when fb_id does not exist
 func (pc *PostController) Update(m []Resource) *ApplicationError {
 	msg := "No variable data to update on posts"
 	return &ApplicationError{Msg: msg, Code: http.StatusNotImplemented}
@@ -107,7 +106,7 @@ func (pc *PostController) Destroy(ids []int) *ApplicationError {
 
 // ReadCollection returns all posts in the db.
 func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
-	// Grab rows from table
+	// grab rows from table
 	rows, err := pc.db.Query(fmt.Sprintf("SELECT * FROM %s", pc.DBTableName()))
 	switch {
 	case err == sql.ErrNoRows:
@@ -119,8 +118,8 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 	}
 	defer rows.Close()
 
-	// Create a Contender from each row
-	posts := make([]Resource, 0) // Container for the Resources we're about to return
+	// create a Contender from each row
+	posts := make([]Resource, 0)
 	for rows.Next() {
 		var fbId string
 		var fbGroupId int
@@ -136,7 +135,7 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 			return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
 		}
 
-		// Split comma separated strings to slices of ints
+		// split comma separated strings to slices of ints
 		likes, err := stringOfIntsToSliceOfInts(likesString)
 		if err != nil {
 			msg := "Something is wrong with our database - we'll be back up soon!"
@@ -158,27 +157,23 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 	return posts, nil
 }
 
-// /////
-// Non API methods and helper functions
-// todo: does this section belong?
-// /////
-
+// PopulatePostsTable pulls posts via the facebook api and enters them into the post table.
 func (pc *PostController) PopulatePostsTable() *ApplicationError {
 	log.Println("Pulling posts from facebook and creating in db")
 
-	// Get slice of post struct pointers from fb
+	// get slice of post struct pointers from fb
 	posts, aerr := pc.fh.PullPostsFromFb()
 	if aerr != nil {
 		return aerr
 	}
 
-	// Convert each contender struct ptr to Resource interface
+	// convert each contender struct ptr to Resource interface
 	postResources := make([]Resource, len(posts))
 	for i, v := range posts {
 		postResources[i] = Resource(v)
 	}
 
-	// Populate Contenders table
+	// populate Contenders table
 	_, aerr = pc.Create(postResources)
 	if aerr != nil {
 		return aerr

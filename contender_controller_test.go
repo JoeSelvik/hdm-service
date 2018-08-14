@@ -1,5 +1,3 @@
-// Simple UTs to test for basic functionality, could be cleaner.
-
 package main
 
 import (
@@ -13,9 +11,9 @@ import (
 	"testing"
 )
 
-// testContenders returns a slice of Contender pointers and its associated slice of Resource interfaces.
+// testContenders returns a slice of contender pointers and their associated slice of resource interfaces.
 //
-// Create the struct you'd like to test with, then convert them to Resource interfaces.
+// Create the struct to test with, then convert to resource interfaces.
 func testContenders() ([]*Contender, []Resource) {
 	contenders := []*Contender{
 		{
@@ -35,9 +33,9 @@ func testContenders() ([]*Contender, []Resource) {
 	return contenders, contenderResources
 }
 
-// testPosts returns a slice of Post pointers and its associated slice of Resource interfaces.
+// testPosts returns a slice of post pointers and its associated slice of resource interfaces.
 //
-// Create the struct you'd like to test with, then convert them to Resource interfaces.
+// Create the struct to test with, then convert to resource interfaces.
 func testPosts() ([]*Post, []Resource) {
 	posts := []*Post{
 		{
@@ -56,6 +54,7 @@ func testPosts() ([]*Post, []Resource) {
 
 type fakeFacebookHandle struct{}
 
+// PullContendersFromFb is a mock function on the test fakeFacebookHandle interface.
 func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *ApplicationError) {
 	contenders := []*Contender{
 		{
@@ -69,6 +68,7 @@ func (fh *fakeFacebookHandle) PullContendersFromFb() ([]*Contender, *Application
 	return contenders, nil
 }
 
+// PullPostsFromFb is a mock function on the test fakeFacebookHandle interface.
 func (fh *fakeFacebookHandle) PullPostsFromFb() ([]*Post, *ApplicationError) {
 	posts := []*Post{
 		{
@@ -82,8 +82,8 @@ func setup() error {
 	log.Println("contender_controller_test setup")
 	config := NewConfig()
 
-	// Get db setup commands
-	// todo: quick and dirty, split has extra "" entry
+	// get db setup commands
+	// todo: Improve quick and dirty code. Split has extra "" entry
 	file, err := ioutil.ReadFile(config.DbSetupScript)
 	if err != nil {
 		log.Printf("Could not open test db script: %s\n", err)
@@ -91,7 +91,7 @@ func setup() error {
 	}
 	cmd := strings.Split(string(file), ";")
 
-	// Open db
+	// open db
 	db, err := models.NewDB(config.DbTestPath)
 	if err != nil {
 		log.Printf("Could not open test db: %s\n", err)
@@ -99,7 +99,7 @@ func setup() error {
 	}
 	log.Printf("Using new test db: %s", config.DbTestPath)
 
-	// Execute each command in db setup script
+	// execute each command in db setup script
 	for _, commands := range cmd {
 		if commands != "" {
 			result, err := db.Exec(commands)
@@ -119,6 +119,7 @@ func teardown() error {
 	return nil
 }
 
+// TestMain inserts a custom setup and teardown for these unit tests.
 func TestMain(m *testing.M) {
 	err := setup()
 	if err != nil {
@@ -126,6 +127,7 @@ func TestMain(m *testing.M) {
 	}
 
 	retCode := m.Run()
+	// todo: improve test failure logic
 	//if retCode == 0 {
 	//	teardown()
 	//}
@@ -139,19 +141,18 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
-// Create, ReadCollection, Update, Read, Destroy, Read contender.
+// TestContenderController_Create tests Create, ReadCollection, Update, Read, Destroy, and Read for contenders.
 func TestContenderController_Create(t *testing.T) {
-	// Create a ContenderController with the test db
+	// create a ContenderController with the test db and some data to test with
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
 		t.Fatalf("Could not open test db: %s\n", err)
 	}
 	cc := &ContenderController{db: db}
-
 	originalContenders, contenderResources := testContenders()
 
-	// Create the ContenderResources
+	// create the contender resources
 	cids, aerr := cc.Create(contenderResources)
 	if aerr != nil {
 		t.Fatalf("Should not error when creating updatedContender: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -160,7 +161,7 @@ func TestContenderController_Create(t *testing.T) {
 		t.Fatal("Should only get back a single id")
 	}
 
-	// Read all originalContenders
+	// read all originalContenders
 	resources, aerr := cc.ReadCollection()
 	if aerr != nil {
 		t.Fatalf("Unable to read collection of originalContenders: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -176,7 +177,7 @@ func TestContenderController_Create(t *testing.T) {
 		t.Fatal("Unable to find updatedContender in ReadCollection")
 	}
 
-	// Update readContender, convert to slice of Resources
+	// update readContender, convert to slice of resources
 	sliceOfPostIds := []string{"111_222", "333_444"}
 	readContender.PostsUsed = sliceOfPostIds
 	readResource := Resource(readContender)
@@ -185,7 +186,7 @@ func TestContenderController_Create(t *testing.T) {
 		t.Fatalf("Error when updating resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 
-	// Read the updated updatedContender
+	// read the updated updatedContender
 	resource, aerr := cc.Read(originalContenders[0].FbId)
 	if aerr != nil {
 		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -198,7 +199,7 @@ func TestContenderController_Create(t *testing.T) {
 		t.Fatal("updatedContender did not have any used posts")
 	}
 
-	// Destroy the originalContender
+	// destroy the originalContender
 	aerr = cc.Destroy([]int{originalContenders[0].FbId})
 	if aerr != nil {
 		t.Fatalf("Error when destroying resource: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -211,7 +212,7 @@ func TestContenderController_Create(t *testing.T) {
 
 // TestContenderController_PopulateContendersTable tests that contenders from FB get created in a db.
 func TestContenderController_PopulateContendersTable(t *testing.T) {
-	// Create a ContenderController with the test db and a fake facebook handle
+	// create a ContenderController with the test db and a fake facebook handle
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
@@ -231,8 +232,11 @@ func TestContenderController_PopulateContendersTable(t *testing.T) {
 	}
 }
 
+// TestContenderController_UpdateContendersVariableDependentData tests updating a contender's variable data.
+//
+// Note - may fail because of the facebook api changes.
 func TestContenderController_UpdateContendersVariableDependentData(t *testing.T) {
-	// Create a ContenderController with the test db and a fake facebook handle
+	// create a ContenderController with the test db and a fake facebook handle
 	config := NewConfig()
 	db, err := models.OpenDB(config.DbTestPath)
 	if err != nil {
@@ -244,7 +248,7 @@ func TestContenderController_UpdateContendersVariableDependentData(t *testing.T)
 	originalContenders, contenderResources := testContenders()
 	originalPosts, postResources := testPosts()
 
-	// Create the ContenderResource and PostResource
+	// create the contender resource and post resource
 	cids, aerr := cc.Create(contenderResources)
 	if aerr != nil {
 		t.Fatalf("Should not error when creating contender: %s\n%s\n", aerr.Msg, aerr.Err)
@@ -261,13 +265,13 @@ func TestContenderController_UpdateContendersVariableDependentData(t *testing.T)
 		t.Fatal("Should only get back a single id")
 	}
 
-	// Update the Contender's variable dependent data
+	// update the Contender's variable dependent data
 	aerr = cc.UpdateContendersVariableDependentData(pc)
 	if aerr != nil {
 		t.Fatalf("Should not error when calling UpdateContendersVariableDependentData: %s\n%s\n", aerr.Msg, aerr.Err)
 	}
 
-	// Read the updated updatedContender
+	// read the updated updatedContender
 	resource, aerr := cc.Read(originalContenders[0].FbId)
 	if aerr != nil {
 		t.Fatalf("Error when reading resource: %s\n%s\n", aerr.Msg, aerr.Err)
