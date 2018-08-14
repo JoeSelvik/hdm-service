@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JoeSelvik/hdm-service/models"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func ServeResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m Resource) {
+func ServeResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m models.Resource) {
 	if len(r.URL.Path) > len(rc.Path()) {
 		ServeSingleResource(w, r, rc, m)
 	} else {
@@ -17,7 +18,7 @@ func ServeResource(w http.ResponseWriter, r *http.Request, rc ResourceController
 }
 
 // ServeSingleResource redirects requests involving a specific resource via an id number.
-func ServeSingleResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m Resource) {
+func ServeSingleResource(w http.ResponseWriter, r *http.Request, rc ResourceController, m models.Resource) {
 	// Parse id number
 	id, err := strconv.Atoi(r.URL.Path[len(rc.Path()):])
 	if err != nil {
@@ -60,7 +61,7 @@ func ServeSingleResource(w http.ResponseWriter, r *http.Request, rc ResourceCont
 }
 
 // ServeResourceCollection redirects requests involving the collection.
-func ServeResourceCollection(w http.ResponseWriter, r *http.Request, rc ResourceController, m Resource) {
+func ServeResourceCollection(w http.ResponseWriter, r *http.Request, rc ResourceController, m models.Resource) {
 	switch r.Method {
 	case "GET":
 		res, aerr := rc.ReadCollection()

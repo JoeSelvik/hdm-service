@@ -14,7 +14,7 @@ import (
 // testContenders returns a slice of contender pointers and their associated slice of resource interfaces.
 //
 // Create the struct to test with, then convert to resource interfaces.
-func testContenders() ([]*Contender, []Resource) {
+func testContenders() ([]*Contender, []models.Resource) {
 	contenders := []*Contender{
 		{
 			Name: "Matt Anderson",
@@ -25,9 +25,9 @@ func testContenders() ([]*Contender, []Resource) {
 			FbId: 777,
 		},
 	}
-	contenderResources := make([]Resource, len(contenders))
+	contenderResources := make([]models.Resource, len(contenders))
 	for i, v := range contenders {
-		contenderResources[i] = Resource(v)
+		contenderResources[i] = models.Resource(v)
 	}
 
 	return contenders, contenderResources
@@ -36,7 +36,7 @@ func testContenders() ([]*Contender, []Resource) {
 // testPosts returns a slice of post pointers and its associated slice of resource interfaces.
 //
 // Create the struct to test with, then convert to resource interfaces.
-func testPosts() ([]*Post, []Resource) {
+func testPosts() ([]*Post, []models.Resource) {
 	posts := []*Post{
 		{
 			AuthorFbId: 666,
@@ -44,9 +44,9 @@ func testPosts() ([]*Post, []Resource) {
 			Likes:      []int{777},
 		},
 	}
-	postResources := make([]Resource, len(posts))
+	postResources := make([]models.Resource, len(posts))
 	for i, v := range posts {
-		postResources[i] = Resource(v)
+		postResources[i] = models.Resource(v)
 	}
 
 	return posts, postResources
@@ -180,8 +180,8 @@ func TestContenderController_Create(t *testing.T) {
 	// update readContender, convert to slice of resources
 	sliceOfPostIds := []string{"111_222", "333_444"}
 	readContender.PostsUsed = sliceOfPostIds
-	readResource := Resource(readContender)
-	aerr = cc.Update([]Resource{readResource})
+	readResource := models.Resource(readContender)
+	aerr = cc.Update([]models.Resource{readResource})
 	if aerr != nil {
 		t.Fatalf("Error when updating resource: %s\n%s\n", aerr.Msg, aerr.Err)
 	}

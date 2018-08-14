@@ -32,7 +32,7 @@ func (pc *PostController) DBTableName() string {
 }
 
 // Create writes a new post to the db for each given Resource.
-func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
+func (pc *PostController) Create(m []models.Resource) ([]int, *ApplicationError) {
 	// create a slice of contender pointers by asserting on a slice of Resources interfaces
 	var posts []*Post
 	for _, p := range m {
@@ -87,14 +87,14 @@ func (pc *PostController) Create(m []Resource) ([]int, *ApplicationError) {
 }
 
 // Read returns the post in the db for a given FbId.
-func (pc *PostController) Read(fbId int) (Resource, *ApplicationError) {
+func (pc *PostController) Read(fbId int) (models.Resource, *ApplicationError) {
 	return nil, &ApplicationError{Code: http.StatusNotImplemented}
 }
 
 // Update writes the db column value for each variable post parameter.
 //
 // Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
-func (pc *PostController) Update(m []Resource) *ApplicationError {
+func (pc *PostController) Update(m []models.Resource) *ApplicationError {
 	msg := "No variable data to update on posts"
 	return &ApplicationError{Msg: msg, Code: http.StatusNotImplemented}
 }
@@ -105,13 +105,13 @@ func (pc *PostController) Destroy(ids []int) *ApplicationError {
 }
 
 // ReadCollection returns all posts in the db.
-func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
+func (pc *PostController) ReadCollection() ([]models.Resource, *ApplicationError) {
 	// grab rows from table
 	rows, err := pc.db.Query(fmt.Sprintf("SELECT * FROM %s", pc.DBTableName()))
 	switch {
 	case err == sql.ErrNoRows:
 		log.Println("Contenders ReadCollection: no rows in table.")
-		return []Resource{}, nil
+		return []models.Resource{}, nil
 	case err != nil:
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -119,7 +119,7 @@ func (pc *PostController) ReadCollection() ([]Resource, *ApplicationError) {
 	defer rows.Close()
 
 	// create a Contender from each row
-	posts := make([]Resource, 0)
+	posts := make([]models.Resource, 0)
 	for rows.Next() {
 		var fbId string
 		var fbGroupId int
@@ -168,9 +168,9 @@ func (pc *PostController) PopulatePostsTable() *ApplicationError {
 	}
 
 	// convert each contender struct ptr to Resource interface
-	postResources := make([]Resource, len(posts))
+	postResources := make([]models.Resource, len(posts))
 	for i, v := range posts {
-		postResources[i] = Resource(v)
+		postResources[i] = models.Resource(v)
 	}
 
 	// populate Contenders table

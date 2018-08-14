@@ -34,7 +34,7 @@ func (cc *ContenderController) DBTableName() string {
 }
 
 // Create writes a new contender to the db for each given Resource.
-func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
+func (cc *ContenderController) Create(m []models.Resource) ([]int, *ApplicationError) {
 	// create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
 	for i := 0; i < len(m); i++ {
@@ -92,7 +92,7 @@ func (cc *ContenderController) Create(m []Resource) ([]int, *ApplicationError) {
 }
 
 // Read returns the contender in the db for a given FbId.
-func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
+func (cc *ContenderController) Read(fbId int) (models.Resource, *ApplicationError) {
 	// todo: find better way to shorten lines of code and reuse in ReadCollection
 	var fbGroupId int
 	var name string
@@ -142,7 +142,7 @@ func (cc *ContenderController) Read(fbId int) (Resource, *ApplicationError) {
 // Update writes the db column value for each variable Contender parameter.
 //
 // Writes Posts, AvgLikesPerPost, TotalLikesReceived, TotalLikesGiven, PostsUsed, and UpdatedAt.
-func (cc *ContenderController) Update(m []Resource) *ApplicationError {
+func (cc *ContenderController) Update(m []models.Resource) *ApplicationError {
 	// Create a slice of Contender pointers by asserting on a slice of Resources interfaces
 	var contenders []*Contender
 	for i := 0; i < len(m); i++ {
@@ -256,13 +256,13 @@ func (cc *ContenderController) Destroy(ids []int) *ApplicationError {
 }
 
 // ReadCollection returns all Contenders in the db.
-func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) {
+func (cc *ContenderController) ReadCollection() ([]models.Resource, *ApplicationError) {
 	// grab rows from table
 	rows, err := cc.db.Query(fmt.Sprintf("SELECT * FROM %s", cc.DBTableName()))
 	switch {
 	case err == sql.ErrNoRows:
 		log.Println("Contenders ReadCollection: no rows in table.")
-		return []Resource{}, nil
+		return []models.Resource{}, nil
 	case err != nil:
 		msg := "Something is wrong with our database - we'll be back up soon!"
 		return nil, &ApplicationError{Msg: msg, Err: err, Code: http.StatusInternalServerError}
@@ -270,7 +270,7 @@ func (cc *ContenderController) ReadCollection() ([]Resource, *ApplicationError) 
 	defer rows.Close()
 
 	// create a contender from each row
-	contenders := make([]Resource, 0)
+	contenders := make([]models.Resource, 0)
 	for rows.Next() {
 		var fbId int
 		var fbGroupId int
@@ -323,9 +323,9 @@ func (cc *ContenderController) PopulateContendersTable() *ApplicationError {
 	}
 
 	// convert each contender struct ptr to Resource interface
-	contenderResources := make([]Resource, len(contenders))
+	contenderResources := make([]models.Resource, len(contenders))
 	for i, v := range contenders {
-		contenderResources[i] = Resource(v)
+		contenderResources[i] = models.Resource(v)
 	}
 
 	// populate Contenders table
@@ -401,9 +401,9 @@ func (cc *ContenderController) UpdateContendersVariableDependentData(pc *PostCon
 	}
 
 	// convert each contender struct ptr to Resource interface
-	var contenderResources []Resource
+	var contenderResources []models.Resource
 	for _, v := range contenders {
-		contenderResources = append(contenderResources, Resource(v))
+		contenderResources = append(contenderResources, models.Resource(v))
 	}
 
 	aerr = cc.Update(contenderResources)
