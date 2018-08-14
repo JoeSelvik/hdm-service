@@ -1,10 +1,10 @@
 # HerpDerpMadness Service
 
 A fun project to hone my Go and backend development skills. Developed to use with a long-standing Facebook group of
-high school friends and their history silly posts.
+high school friends and their history of silly posts.
 
-Using Facebook's [Graph API](https://developers.facebook.com/docs/graph-api/), pull a Facebook group's members
-and feed. Gather various data from each and create a "Bracket" similar to college basketball's March Madness tournament.
+Using Facebook's [Graph API](https://developers.facebook.com/docs/graph-api/), pull a Facebook group's members and feed.
+Gather various data from each and create a "Bracket" similar to college basketball's March Madness tournament.
 "Contenders" are paired against each other per-round. Their "Matchup" displays five random "Posts" from each contender and anyone can vote
 for which contender had the best posts.
 
