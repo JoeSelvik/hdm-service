@@ -1,3 +1,5 @@
+// Note - this is pretty out of date. Needs to be updated to follow the patterns used for contenders and posts.
+
 package main
 
 import (

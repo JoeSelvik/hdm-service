@@ -32,33 +32,33 @@ type Configuration struct {
 	Port            int
 }
 
-// NewConfig reads a config from the config file.
+// NewConfig reads a configuration values from config.json.
 //
-// The default config file location is $GOPATH/src/github.com/JoeSelvik/hdm-service/config.json, but it may be
-// overridden with the BALTOSVC_CONFIG_FILE environment variable. Environment variables in HDMSVC_CONFIG_FILE
-// will be expanded, but ~ will not work.
+// The default config file location is in the project root dir, but it may be overridden with the HDMSVC_CONFIG_FILE
+// environment variable. Environment variables in HDMSVC_CONFIG_FILE will be expanded, but ~ will not work. Environment
+// variables in path configs will also have environment variables expanded.
 //
-// Environment variables in path configs will also have environment variables expanded.
+// NewConfig will panic if any configuration values are unset.
 //
-// NewConfig will panic if any values are unset.
+// Note - Probably better to use a file format that supports comments, like yaml
 func NewConfig() *Configuration {
-	// Get the config file path. Defaults to `$GOPATH/src/github.com/JoeSelvik/hdm-service/config.json`
-	configFilePath := os.Getenv("HDMSVC_CONFIG_FILE")
-	if configFilePath == "" {
-		configFilePath = "$GOPATH/src/github.com/JoeSelvik/hdm-service/config.json" // todo: change
+	// get the config file
+	configFile := os.Getenv("HDMSVC_CONFIG_FILE")
+	if configFile == "" {
+		configFile = "config.json"
 	}
 
-	// Expand environment variables in the config file path
-	configFilePath = os.ExpandEnv(configFilePath)
+	// expand environment variables in the config file path
+	configFile = os.ExpandEnv(configFile)
 
-	// Try to open the config file
-	f, err := os.Open(configFilePath)
+	// open the config file
+	f, err := os.Open(configFile)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	// Parse the config file
+	// parse the config file
 	config := new(Configuration)
 	d := json.NewDecoder(f)
 	err = d.Decode(config)
@@ -66,9 +66,9 @@ func NewConfig() *Configuration {
 		panic(err)
 	}
 
-	// Expand environment variables in the path fields
+	// todo: If given, expand environment variables in the path fields
 
-	// Panic over unset, required config variables
+	// panic over unset required config variables
 	if config.FbGroupId == 0 {
 		panic("fb_group_id is not set")
 	}
@@ -79,7 +79,7 @@ func NewConfig() *Configuration {
 		panic("db_path is not set")
 	}
 
-	// todo: right place to handle start and end time, with two values?
+	// todo: Is this the right place to handle start and end time, with two values?
 	if config.StartTimeString == "" {
 		panic("start_time is not set")
 	}

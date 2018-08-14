@@ -1,8 +1,8 @@
+// Note - this is pretty out of date. Needs to be updated to follow the patterns used for contenders and posts.
+
 package main
 
 import (
-	// "database/sql"
-	// "encoding/json"
 	"database/sql"
 	"fmt"
 	"github.com/JoeSelvik/hdm-service/models"
