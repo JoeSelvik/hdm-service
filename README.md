@@ -4,9 +4,9 @@ A fun project to hone my Go and backend development skills. Developed to use wit
 high school friends and their history of silly posts.
 
 Using Facebook's [Graph API](https://developers.facebook.com/docs/graph-api/), pull a Facebook group's members and feed.
-Gather various data from each and create a "Bracket" similar to college basketball's March Madness tournament.
-"Contenders" are paired against each other per-round. Their "Matchup" displays five random "Posts" from each contender and anyone can vote
-for which contender had the best posts.
+Gather various data from each and create a **Bracket** similar to college basketball's March Madness tournament.
+**Contenders** are paired against each other per-round. Their **Matchup** displays five random **Posts** from each
+contender and anyone can vote for which contender has the best posts.
 
 For the front end I originally planned to use [jquery-bracket](http://www.aropupu.fi/bracket/). However, as the
 project dragged on I started to learn Vue. If continued I may switch to this [vue-tournament-bracket](https://github.com/antonionoca/vue-tournament-bracket)
