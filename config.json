@@ -1,0 +1,9 @@
+{
+  "fb_access_token": "EAAKweAs72uUBAJa2oNfSEG45MV8cYMxhBwakvbQI2z4MwlLWFqLM4BmYkY1HlygPOmjb17ddIoevcfEe6M3J6kpfFIqbg2TGlwdpOCZBZC7BHtTW6Sl5DgIWRICo79gw5vAcigR7NV9Xtqaa0WFmpA1PB4I9aIvPhTSf0xhm08Htm58zxUEFSFR2nF3yMZD",
+  "fb_group_id": 208678979226870,
+  "db_path": "/Users/joeselvik/projects/go/src/github.com/JoeSelvik/hdm-service/data.db",
+  "db_setup_script": "/Users/joeselvik/projects/go/src/github.com/JoeSelvik/hdm-service/create_tables.sql",
+  "db_test_path": "/Users/joeselvik/projects/go/src/github.com/JoeSelvik/hdm-service/test.db",
+  "start_time": "2017-01-01T00:00:00+0000",
+  "end_time": "2017-12-31T00:00:00+0000"
+}

@@ -1,4 +1,6 @@
-# Contenders
+Working notes on the data schema
+
+## Contenders
 * FbId int                        --> INTEGER
 * FbGroupId int                   --> INTEGER
 * Name string                     --> TEXT
@@ -11,7 +13,7 @@
 * UpdatedAt time.Time             --> DATETIME
 
 
-# Posts
+## Posts
 * FbId string                     --> TEXT
 * FbGroupId int                   --> INTEGER
 * PostedDate time.Time            --> DATETIME
@@ -21,7 +23,7 @@
 * UpdatedAt time.Time             --> DATETIME
 
 
-# Brackets
+## Brackets
 * Id int                          --> INTEGER
 * FbGroupId int                   --> INTEGER
 * StartTime time.Time             --> DATETIME
@@ -32,7 +34,7 @@
 * UpdatedAt time.Time             --> DATETIME
 
 
-# Matchups
+## Matchups
 * Id int                          --> INTEGER
 * BracketId int                   --> INTEGER
 * Name string                     --> TEXT  // determines round?

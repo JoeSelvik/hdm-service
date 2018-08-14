@@ -12,7 +12,7 @@ CREATE TABLE contenders (
 );
 
 CREATE TABLE posts (
-  fb_id INTEGER,
+  fb_id Text,
   fb_group_id INTEGER,
   posted_date DATETIME,
   author_fb_id INTEGER,

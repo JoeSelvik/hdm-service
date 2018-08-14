@@ -1,4 +1,6 @@
-# Contenders
+Working notes as I develop
+
+## Contenders
 * CreateContendersTable()
 * CreateContenders()
 
@@ -10,7 +12,7 @@
 * UpdateContenderByName()
 
 
-# Posts
+## Posts
 * CreatePostsTable()
 * CreatePosts()
 
@@ -18,7 +20,7 @@
 * PullPostsFromFB()
 
 
-# Brackets
+## Brackets
 * CreateBracketsTable()
 
 * CreateBracket()
@@ -32,7 +34,7 @@
 * UpdateResults()
 
 
-# Matchup
+## Matchup
 * CreateMatchupsTable()
 
 * CreateFirstRoundMatchups(), SecondRound(), ...
@@ -45,7 +47,7 @@
 * UpdateMatchupVoters()
 
 
-# Handler interfaces
+## Handler interfaces
 * GetBracketById()
   * GET /bracket/1
 
@@ -58,11 +60,8 @@
 * GetScore()
   * GET /matchup/1
 
-# readme
-* sqlite3 data.db < create_tables.sql
 
-
-# main
+## On startup
 * read config file
 
 * CreateContenders()
@@ -71,7 +70,6 @@
   * PullPostsFromFb()
 
 * UpdateContendersVariableDependentData()
-* UpdateContendersIndependantData()
 
 * CreateBracket()
   * CreateTeams()
@@ -85,18 +83,13 @@
   * http.ListenAndServe(":8080", nil)
 
 
-# manual
+## Planned Manual Operations
 * End round
 * Create round
 
 
 
-# START
-* run on entire feed history, deal with when contenders don't exist
-
-# HDM Qs
-* where to get and store a Post's permalink_url?
-* should I be using UNIQUE in my tables? does this show up with .schema?
-
-# golang
-* optional arguments, like make() length and capacity arguments
+## Work on next
+* If project is worked on again, it will need a new way to pull contenders and posts from facebook
+* re-evaulate http://www.aropupu.fi/bracket/ for front end use
+* update bracket and matchup endpoints
