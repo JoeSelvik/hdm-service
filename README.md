@@ -1,8 +1,5 @@
 # HerpDerpMadness Service
 
-A fun project to hone my Go and backend development skills. Developed to use with a long-standing Facebook group of
-high school friends and their history of silly posts.
-
 Using Facebook's [Graph API](https://developers.facebook.com/docs/graph-api/), pull a Facebook group's members and feed.
 Gather various data from each and create a **Bracket** similar to college basketball's March Madness tournament.
 **Contenders** are paired against each other per-round. Their **Matchup** displays five random **Posts** from each
@@ -12,8 +9,8 @@ For the front end I originally planned to use [jquery-bracket](http://www.aropup
 project dragged on I started to learn Vue. If continued I may switch to this [vue-tournament-bracket](https://github.com/antonionoca/vue-tournament-bracket)
 repo.
 
-Unfortunately, after the Cambridge Analytica scandal Facebook removed many of the Graph API endpoints I used to gather
-data from. Instead of finding a new way (if even possible) I've decided to retire the project and move on. It is a well
+Unfortunately, after the Cambridge Analytica scandal Facebook removed many of the endpoints I used to gather
+data from. Instead of finding a new way (if possible) I've decided to retire the project and move on. It is a well
 thought out effort though and I currently use it as a reference for other work.
 
 ## Running
